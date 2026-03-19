@@ -3,13 +3,14 @@
   Standalone (no require of window.lua); uses same client geometry as window.new.
 
   local W = dofile("/home/lib/widgets.lua")
-  W.log_paint(win, lines, first_visible_line_1based)
+  W.log_paint(win, lines, first_visible_line_1based [, start_row_0based])
   idx = W.log_tail_index(lines, win:client_h())
   W.button(win, col, row, width, label [, fg, bg])
   W.hrule(win, row [, char])
   W.label_block(win, col, row, { "a", "b" })
 ]]
 
+local atlasgfx = dofile("/home/lib/atlasgfx.lua")
 local widgets = {}
 
 local function draw_text_line(win, rel_col, rel_row, text)
@@ -19,28 +20,31 @@ local function draw_text_line(win, rel_col, rel_row, text)
   local maxc = cw - rel_col
   text = tostring(text)
   if #text > maxc then text = text:sub(1, maxc) end
-  gfx.setColor(win.client_fg, win.client_bg)
-  gfx.text(win:client_x() + rel_col, win:client_y() + rel_row, text)
+  atlasgfx.setColor(win.client_fg, win.client_bg)
+  atlasgfx.text(win:client_x() + rel_col, win:client_y() + rel_row, text)
 end
 
-local function draw_text_lines(win, lines, start_line)
+local function draw_text_lines(win, lines, start_line, y0)
   lines = lines or {}
   start_line = math.max(1, math.floor(start_line or 1))
+  y0 = math.max(0, math.floor(y0 or 0))
   local ch, cw = win:client_h(), win:client_w()
   if ch < 1 or cw < 1 then return end
-  gfx.setColor(win.client_fg, win.client_bg)
-  for row = 0, ch - 1 do
+  local max_rows = ch - y0
+  if max_rows < 1 then return end
+  atlasgfx.setColor(win.client_fg, win.client_bg)
+  for row = 0, max_rows - 1 do
     local line = lines[start_line + row]
     if line then
       line = tostring(line)
       if #line > cw then line = line:sub(1, cw) end
-      gfx.text(win:client_x(), win:client_y() + row, line)
+      atlasgfx.text(win:client_x(), win:client_y() + y0 + row, line)
     end
   end
 end
 
-function widgets.log_paint(win, lines, first_line)
-  draw_text_lines(win, lines, first_line)
+function widgets.log_paint(win, lines, first_line, y0)
+  draw_text_lines(win, lines, first_line, y0)
 end
 
 function widgets.log_tail_index(lines, visible_rows)
@@ -61,9 +65,9 @@ function widgets.button(win, col, row, width, label, fg, bg)
   local inner = width - 2
   if #label > inner then label = label:sub(1, inner) end
   local s = "[" .. label .. string.rep(" ", inner - #label) .. "]"
-  gfx.setColor(fg, bg)
-  gfx.fillRect(cx + col, cy + row, width, 1, " ")
-  gfx.text(cx + col, cy + row, s)
+  atlasgfx.setColor(fg, bg)
+  atlasgfx.fillRect(cx + col, cy + row, width, 1, " ")
+  atlasgfx.text(cx + col, cy + row, s)
 end
 
 function widgets.hrule(win, row, ch)
@@ -72,8 +76,8 @@ function widgets.hrule(win, row, ch)
   if cw < 1 then return end
   row = math.floor(row)
   if row < 0 or row >= win:client_h() then return end
-  gfx.setColor(win.client_fg, win.client_bg)
-  gfx.text(win:client_x(), win:client_y() + row, string.rep(ch, cw))
+  atlasgfx.setColor(win.client_fg, win.client_bg)
+  atlasgfx.text(win:client_x(), win:client_y() + row, string.rep(ch, cw))
 end
 
 function widgets.label_block(win, col, row, text_lines)

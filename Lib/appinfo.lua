@@ -3,7 +3,7 @@
   See /home/AtlasOS/APPINFO.md (or repo AtlasOS/APPINFO.md).
 ]]
 
-local json = dofile("/home/lib/json.lua")
+local json = require("json")
 
 local appinfo = {}
 

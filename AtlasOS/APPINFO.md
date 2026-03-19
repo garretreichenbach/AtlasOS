@@ -73,7 +73,32 @@ Use **`runapp <id>`** from the terminal or launch from the Start menu / taskbar 
 
 ## Libraries
 
-- **`/home/lib/json.lua`** — `json.decode(string)`, `json.encode(value)`.
+- LuaMade **`json`** — `require("json")` for `decode` / `encode`.
 - **`/home/lib/appinfo.lua`** — `appinfo.load_package(dir)`, `appinfo.scan("/home/apps")`.
+- **`/home/lib/appkit.lua`** — Menu bar, dropdowns, and toolbar row for **paint_module** windows (or any code that paints a `window` client). Sets `win._appkit_shell` and receives clicks via the desktop (`handle_click` in client coords). Example:
+
+```lua
+local appkit = dofile("/home/lib/appkit.lua")
+local shell = appkit.shell({
+  on_command = function(id, ctx)
+    if id == "quit" then _G.AtlasOS_log[#_G.AtlasOS_log+1] = "Quit" end
+  end,
+})
+shell:set_menubar({
+  { label = "File", items = {
+    { label = "New", id = "new" },
+    { label = "Quit", id = "quit" },
+  }},
+})
+shell:set_toolbar({ { label = "Save", id = "save", w = 8 } })
+
+-- inside paint(win):
+shell:attach(win)
+shell:paint_decorations(win)
+local y0, ch = shell:content_row(), shell:content_height(win)
+window.draw_text_line(win, 0, y0, "Content starts row " .. tostring(y0))
+-- … draw more using rows y0 .. y0+ch-1 …
+shell:paint_dropdown(win)  -- last, so the menu draws over content
+```
 
 Refresh the registry after adding packages: **`reload_apps`** (or restart shell).

@@ -1,6 +1,6 @@
 # AtlasOS
 
-**Windows 11–style shell:** bottom **taskbar** — **Start [S]** | **search** | fixed **Files / Console / Status** | **your pins** | **Settings** | **Trash**. Bottom strip: **left** — computer block name · **sector** · **system** (LuaMade `Entity` API); **right** — **time + date** (`util.now` + `os.date` when available).
+**AtlasOS shell:** bottom **taskbar** — **Start [S]** | **search** | fixed **Files / Console / Status** | **your pins** | **Settings** | **Trash**. Bottom strip: **left** — computer block name · **sector** · **system** (LuaMade `Entity` API); **right** — **time + date** (`util.now` + `os.date` when available).
 
 ## Taskbar zones
 
@@ -77,19 +77,15 @@ Every built-in (Guide via `welcome`, Files, Console, Status, Settings, Trash, Se
 - **`apps`** — list package apps · **`runapp <id>`** · **`reload_apps`**
 - Spec: **`APPINFO.md`**
 
-## Canvas / sharper graphics (LuaMade)
+## Graphics (LuaMade bitmap `gfx`)
 
-AtlasOS uses the **`canvas`** gfx backend (overlay layers) and **`gfx.setCellScale`** so each character cell can use more screen pixels — see [Text Graphics API](https://garretreichenbach.github.io/Logiscript/markdown/graphics/text-graphics.html).
-
-- **Defaults** (override in `/etc/AtlasOS/gfx.conf`): `cell_scale=1.5`, plus **`setPixelScale`** regions — **`icon_pixel_scale`** (Start tiles), **`taskbar_icon_pixel_scale`**, **`search_pixel_scale`** for extra-crisp icons and search without changing layout.
-- Example: copy **`gfx.conf.example`** → **`/etc/AtlasOS/gfx.conf`**.
-- If the server disables canvas (`gfx_canvas_backend_enabled=false`), fall back with `gfx.setBackend("terminal")` in a custom boot script — AtlasOS only calls `setBackend("canvas")` when available.
-- **Guide** window shows **cell scale** when `gfx.getCellScale` exists, plus **`/home/AtlasOS/README.txt`** when present.
+The desktop targets the current [Graphics API](https://garretreichenbach.github.io/Logiscript/markdown/graphics/gfx.html): **pixel** canvas, **layers**, and **`gfx.rect` / `gfx.line` / `gfx.point`** with normalized RGBA. AtlasOS keeps a **logical character grid** (windows, taskbar, hit-tests) and draws through **`/home/lib/atlasgfx.lua`**, which rasterizes an embedded **8×8** font (`font8x8_basic`) into cells. Optional `/etc/AtlasOS/gfx.conf` sets **`cell_scale`** (default `1.5`) to scale cell pixel size. On older hosts that still expose **`gfx.text`** / **`gfx.fillRect(..., " ")`**, atlasgfx passes calls through unchanged.
 
 ## Files
 
-- `/home/lib/json.lua` — JSON parse/stringify
+- LuaMade **`json`** — `require("json")` in settings/appinfo
 - `/home/lib/appinfo.lua` — load `appinfo.json`
+- `/home/lib/appkit.lua` — menu bar, dropdowns, toolbar row for window clients (see `APPINFO.md`)
 - `/home/lib/startmenu.lua` — registry, groups, fixed-slot rules
 - `/home/AtlasOS/ui.lua` — taskbar, search steps, windows
 - `/home/.trash` — Trash window lists this folder

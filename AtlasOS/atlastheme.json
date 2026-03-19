@@ -1,0 +1,30 @@
+{
+  "mode": "light",
+  "colors": {
+    "light": {
+      "bg": "white",
+      "fg": "black",
+      "highlight_bg": "bright_white",
+      "highlight_fg": "black",
+      "taskbar_bg": "bright_white",
+      "taskbar_fg": "black",
+      "window_bg": "white",
+      "window_title_bg": "bright_white",
+      "window_title_fg": "black",
+      "window_border_fg": "black"
+    },
+    "dark": {
+      "bg": "black",
+      "fg": "bright_white",
+      "highlight_bg": "bright_black",
+      "highlight_fg": "bright_white",
+      "taskbar_bg": "bright_black",
+      "taskbar_fg": "bright_white",
+      "window_bg": "black",
+      "window_title_bg": "bright_black",
+      "window_title_fg": "bright_white",
+      "window_border_fg": "bright_white"
+    }
+  }
+}
+

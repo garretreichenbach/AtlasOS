@@ -1,11 +1,12 @@
 --[[
-  window.lua — window chrome + desktop on LuaMade gfx.
+  window.lua — window chrome + desktop (LuaMade gfx via atlasgfx facade).
 
   Desktop: add / remove / bring_to_front / set_focus / focus_next / focus_prev
   Title bar: minimize (_), maximize (^/v), close (x). hit_chrome(win, cx, cy).
   Text: draw_text_line, draw_text_lines (clipped to client area)
 ]]
 
+local atlasgfx = dofile("/home/lib/atlasgfx.lua")
 local window = {}
 
 local function clamp_title(s, maxLen)
@@ -55,26 +56,26 @@ end
 function Win:paint()
   if self.minimized then return end
   local x, y, w, h = self.x, self.y, self.w, self.h
-  gfx.setColor(self.body_fg, self.body_bg)
-  gfx.fillRect(x, y, w, h, " ")
-  gfx.rect(x, y, w, h, self.border)
-  gfx.setColor(self.title_fg, self.title_bg)
-  gfx.fillRect(x + 1, y + 1, w - 2, 1, " ")
+  atlasgfx.setColor(self.body_fg, self.body_bg)
+  atlasgfx.fillRect(x, y, w, h, " ")
+  atlasgfx.rect(x, y, w, h, self.border)
+  atlasgfx.setColor(self.title_fg, self.title_bg)
+  atlasgfx.fillRect(x + 1, y + 1, w - 2, 1, " ")
   local btn = title_btn_count(w)
   local tmax = math.max(1, w - 4 - btn)
   local title_prefix = self.focused and "*" or " "
-  gfx.text(x + 2, y + 1, title_prefix .. clamp_title(self.title, tmax))
+  atlasgfx.text(x + 2, y + 1, title_prefix .. clamp_title(self.title, tmax))
   if btn >= 3 then
-    gfx.text(x + w - 4, y + 1, "_")
+    atlasgfx.text(x + w - 4, y + 1, "_")
   end
   if btn >= 2 then
-    gfx.text(x + w - 3, y + 1, self.maximized and "v" or "^")
+    atlasgfx.text(x + w - 3, y + 1, self.maximized and "v" or "^")
   end
-  gfx.text(x + w - 2, y + 1, "x")
+  atlasgfx.text(x + w - 2, y + 1, "x")
   local cw, ch = self:client_w(), self:client_h()
   if cw >= 1 and ch >= 1 then
-    gfx.setColor(self.client_fg, self.client_bg)
-    gfx.fillRect(self:client_x(), self:client_y(), cw, ch, " ")
+    atlasgfx.setColor(self.client_fg, self.client_bg)
+    atlasgfx.fillRect(self:client_x(), self:client_y(), cw, ch, " ")
   end
 end
 
@@ -133,8 +134,8 @@ function window.draw_text_line(win, rel_col, rel_row, text)
   local maxc = cw - rel_col
   text = tostring(text)
   if #text > maxc then text = text:sub(1, maxc) end
-  gfx.setColor(win.client_fg, win.client_bg)
-  gfx.text(win:client_x() + rel_col, win:client_y() + rel_row, text)
+  atlasgfx.setColor(win.client_fg, win.client_bg)
+  atlasgfx.text(win:client_x() + rel_col, win:client_y() + rel_row, text)
 end
 
 --- Fill client with lines[start_line], lines[start_line+1], … (1-based index).
@@ -144,13 +145,13 @@ function window.draw_text_lines(win, lines, start_line)
   start_line = math.max(1, math.floor(start_line or 1))
   local ch, cw = win:client_h(), win:client_w()
   if ch < 1 or cw < 1 then return end
-  gfx.setColor(win.client_fg, win.client_bg)
+  atlasgfx.setColor(win.client_fg, win.client_bg)
   for row = 0, ch - 1 do
     local line = lines[start_line + row]
     if line then
       line = tostring(line)
       if #line > cw then line = line:sub(1, cw) end
-      gfx.text(win:client_x(), win:client_y() + row, line)
+      atlasgfx.text(win:client_x(), win:client_y() + row, line)
     end
   end
 end
@@ -271,8 +272,8 @@ end
 function window.Desktop.paint_region(d, gx, gy, gw, gh)
   gx, gy = math.max(1, math.floor(gx)), math.max(1, math.floor(gy))
   gw, gh = math.max(1, math.floor(gw)), math.max(1, math.floor(gh))
-  gfx.setColor(d.bg_fg, d.bg_bg)
-  gfx.fillRect(gx, gy, gw, gh, d.fill)
+  atlasgfx.setColor(d.bg_fg, d.bg_bg)
+  atlasgfx.fillRect(gx, gy, gw, gh, d.fill)
   for i = 1, #d._windows do
     if not d._windows[i].minimized then
       d._windows[i]:paint()
@@ -281,8 +282,19 @@ function window.Desktop.paint_region(d, gx, gy, gw, gh)
 end
 
 function window.Desktop.paint(d, gw, gh)
-  gw = gw or gfx.getWidth()
-  gh = gh or gfx.getHeight()
+  if not gw or not gh then
+    local cw, ch = atlasgfx.canvas_cells()
+    if cw and ch then
+      gw, gh = cw, ch
+    elseif gfx and type(gfx.getWidth) == "function" then
+      local ok, w, h = pcall(function()
+        return gfx.getWidth(), gfx.getHeight()
+      end)
+      if ok and w and h then gw, gh = w, h end
+    end
+  end
+  gw = gw or 80
+  gh = gh or 24
   window.Desktop.paint_region(d, 1, 1, gw, gh)
 end
 

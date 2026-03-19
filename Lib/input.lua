@@ -9,8 +9,8 @@
   Events: { type="key", key=GLFW, char, down, shift, ctrl, alt }
           { type="mouse", button, pressed, released, x, y, dx, dy, wheel }
 
-  Mouse x,y are in dialog pixels. Use set_canvas_pixels() + pixel_to_cell() to scale
-  to the gfx cell grid (1-based).
+  Mouse x,y are in dialog pixels. With bitmap gfx, prefer e.uiX / e.uiY and e.insideCanvas
+  (canvas space); UI maps those to cells. Otherwise use set_canvas_pixels() + pixel_to_cell().
 ]]
 
 local mod = rawget(_G, "input")

@@ -105,19 +105,9 @@ export = {
   get_state = function()
     return state
   end,
-  --- gfx, opt: x, y0, sw, th, tb, fg, accent(28), search_pixel_scale (optional)
-  draw_taskbar = function(gfx, opt)
+  --- ag = atlasgfx facade; opt: x, y0, sw, th, tb, fg, accent (28)
+  draw_taskbar = function(ag, opt)
     local x, y0, sw, th, tb, fg, accent = opt.x, opt.y0, opt.sw, opt.th, opt.tb, opt.fg, opt.accent
-    local sps = tonumber(opt.search_pixel_scale) or 1
-    if type(gfx.setPixelScale) == "function" and sps > 1.02 then
-      sps = math.max(0.5, math.min(4, sps))
-      local sh = (th >= 3) and 2 or 1
-      for yy = y0, y0 + sh - 1 do
-        for xx = x, x + sw - 1 do
-          pcall(gfx.setPixelScale, xx, yy, sps, sps)
-        end
-      end
-    end
     local qraw = state.needle_display ~= "" and state.needle_display or ""
     local spin = ({ ".", "o", "O", "o" })[(state.tick % 4) + 1]
     state.tick = state.tick + 1
@@ -127,10 +117,10 @@ export = {
     local box = "[" .. qdisp .. string.rep(" ", math.max(0, sw - 2 - #qdisp)) .. "]"
     if #box > sw then box = box:sub(1, sw) end
     local search_h = (th >= 3) and 2 or 1
-    gfx.setColor("black", "white")
-    gfx.fillRect(x, y0, sw, search_h, " ")
-    gfx.text(x, y0, box:sub(1, sw))
-    gfx.setColor(fg, tb)
+    ag.setColor("black", "white")
+    ag.fillRect(x, y0, sw, search_h, " ")
+    ag.text(x, y0, box:sub(1, sw))
+    ag.setColor(fg, tb)
     if search_h >= 2 then
       local sub = ""
       if state.needle ~= "" then
@@ -140,13 +130,13 @@ export = {
         sub = "search / find"
       end
       if #sub > sw then sub = sub:sub(1, sw - 1) .. "…" end
-      gfx.setColor(accent, tb)
-      gfx.text(x, y0 + 1, sub)
+      ag.setColor(accent, tb)
+      ag.text(x, y0 + 1, sub)
     elseif th == 2 and state.needle ~= "" then
       local tail = " " .. #state.name_hits .. "n/" .. #state.content_hits .. "f"
       if #box + #tail <= sw then
-        gfx.setColor("black", "white")
-        gfx.text(x + #box, y0, tail)
+        ag.setColor("black", "white")
+        ag.text(x + #box, y0, tail)
       end
     end
   end,

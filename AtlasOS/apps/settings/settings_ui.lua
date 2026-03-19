@@ -8,6 +8,7 @@ if not factory then
   local widgets = ctx.widgets
   local atlastheme = ctx.atlastheme
   local VERSION = ctx.VERSION or "0"
+  local appkit = dofile("/home/lib/appkit.lua")
 
   local CATS = {
     { id = "system", label = "System" },
@@ -17,7 +18,33 @@ if not factory then
     { id = "about", label = "About" },
   }
 
+  local view_items = {}
+  for _, c in ipairs(CATS) do
+    view_items[#view_items + 1] = { label = c.label, id = "cat:" .. c.id }
+  end
+
+  local shell = appkit.shell({
+    on_command = function(id)
+      UI.settings_dispatch(id)
+    end,
+  })
+  shell:set_menubar({
+    { label = "View", items = view_items },
+    {
+      label = "Actions",
+      items = {
+        { label = "Save layout", id = "cmd:save_layout" },
+        { label = "Reload apps", id = "cmd:reload_apps" },
+      },
+    },
+  })
+  shell:set_toolbar({
+    { label = "Save", id = "cmd:save_layout", w = 8 },
+    { label = "Reload", id = "cmd:reload_apps", w = 10 },
+  })
+
   return function(win)
+    local atlasgfx = dofile("/home/lib/atlasgfx.lua")
     if not UI._settings_cat then UI._settings_cat = "system" end
     UI._settings_zones = {}
 
@@ -28,6 +55,14 @@ if not factory then
     local cw, ch = win:client_w(), win:client_h()
     if cw < 14 or ch < 6 then
       window.draw_text_line(win, 0, 0, "Resize Settings window")
+      return
+    end
+
+    shell:attach(win)
+    shell:paint_decorations(win)
+    local yB = shell:content_row()
+    if yB + 4 > ch then
+      shell:paint_dropdown(win)
       return
     end
 
@@ -42,45 +77,45 @@ if not factory then
     end
 
     local cx0, cy0 = win:client_x(), win:client_y()
-    gfx.setColor(win.client_fg, win.client_bg)
+    atlasgfx.setColor(win.client_fg, win.client_bg)
 
-    for r = 0, ch - 1 do
-      gfx.text(cx0 + DIV, cy0 + r, "│")
+    for r = yB, ch - 1 do
+      atlasgfx.text(cx0 + DIV, cy0 + r, "│")
     end
 
-    gfx.setColor("bright_white", win.client_bg)
-    window.draw_text_line(win, 1, 0, "Settings")
-    gfx.setColor(win.client_fg, win.client_bg)
+    atlasgfx.setColor("bright_white", win.client_bg)
+    window.draw_text_line(win, 1, yB, "Settings")
+    atlasgfx.setColor(win.client_fg, win.client_bg)
 
-    local row = 2
+    local row = yB + 2
     for _, c in ipairs(CATS) do
       if row >= ch - 1 then break end
       local sel = (UI._settings_cat == c.id)
       if sel then
-        gfx.setColor("black", "bright_white")
-        gfx.fillRect(cx0, cy0 + row, LW, 1, " ")
+        atlasgfx.setColor("black", "bright_white")
+        atlasgfx.fillRect(cx0, cy0 + row, LW, 1, " ")
       else
-        gfx.setColor(win.client_fg, win.client_bg)
+        atlasgfx.setColor(win.client_fg, win.client_bg)
       end
       local line = (sel and "│ " or "  ") .. c.label
       line = line .. string.rep(" ", math.max(0, LW - #line))
       if #line > LW then line = line:sub(1, LW) end
-      gfx.text(cx0, cy0 + row, line)
+      atlasgfx.text(cx0, cy0 + row, line)
       add_zone(0, row, LW - 1, row, "cat:" .. c.id)
-      gfx.setColor(win.client_fg, win.client_bg)
+      atlasgfx.setColor(win.client_fg, win.client_bg)
       row = row + 1
     end
 
     local cat = UI._settings_cat
-    local rr = 1
+    local rr = yB + 1
     local t = atlastheme.load()
     local mode = (t and t.mode) or "light"
     local dev = UI.developer_mode_enabled()
 
     local function hdr(s)
-      gfx.setColor("bright_white", win.client_bg)
+      atlasgfx.setColor("bright_white", win.client_bg)
       window.draw_text_line(win, R0, rr, (s or ""):sub(1, RW))
-      gfx.setColor(win.client_fg, win.client_bg)
+      atlasgfx.setColor(win.client_fg, win.client_bg)
       rr = rr + 1
     end
 
@@ -120,7 +155,7 @@ if not factory then
         rr = rr + 1
       end
       ln("")
-      ln("gfx.conf: cell_scale, icon_pixel_scale")
+      ln("gfx.conf: cell_scale (bitmap text size)")
     elseif cat == "apps" then
       hdr("Apps")
       ln("")
@@ -147,6 +182,8 @@ if not factory then
       ln("")
       btn(R0, rr, 18, "[ Save layout ]", "cmd:save_layout")
     end
+
+    shell:paint_dropdown(win)
   end
   end
   _G[CACHE] = factory

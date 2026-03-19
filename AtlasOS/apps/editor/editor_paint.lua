@@ -6,24 +6,49 @@ if not factory then
   local UI = ctx.UI
   local window = ctx.window
   local widgets = ctx.widgets
+  local appkit = dofile("/home/lib/appkit.lua")
+  local shell = appkit.shell({
+    on_command = function(id)
+      if id == "save" then UI.editor_save() end
+    end,
+  })
+  shell:set_menubar({
+    {
+      label = "File",
+      items = {
+        { label = "Save", id = "save" },
+      },
+    },
+  })
+  shell:set_toolbar({
+    { label = "Save", id = "save", w = 8 },
+  })
 
   return function(win)
+    local atlasgfx = dofile("/home/lib/atlasgfx.lua")
     UI.editor_ensure()
     local st = UI._editor
     local cw, ch = win:client_w(), win:client_h()
-    if ch < 3 then return end
+    if ch < 1 or cw < 1 then return end
+
+    shell:attach(win)
 
     local dirty = st.dirty and " *" or ""
     local p = st.path or "?"
     if #p + #dirty > cw - 14 then
       p = "…" .. p:sub(math.max(1, #p - cw + 18))
     end
-    local status = p .. dirty .. "  L" .. st.cur_line .. ":" .. (st.cur_col + 1) .. "  ^S save"
+    local status = p .. dirty .. "  L" .. st.cur_line .. ":" .. (st.cur_col + 1) .. "  ^S"
     if #status > cw then status = status:sub(1, cw) end
-    window.draw_text_line(win, 0, 0, status)
-    widgets.hrule(win, 1, "-")
 
-    local body_h = ch - 2
+    shell:paint_decorations(win)
+    local y0 = shell:content_row()
+    if y0 + 2 > ch then return end
+    window.draw_text_line(win, 0, y0, status)
+    widgets.hrule(win, y0 + 1, "-")
+    local body_start = y0 + 2
+
+    local body_h = math.max(0, ch - body_start)
     local scroll = st.scroll or 1
     while st.cur_line < scroll do
       scroll = scroll - 1
@@ -33,7 +58,7 @@ if not factory then
     end
     st.scroll = scroll
 
-    gfx.setColor(win.client_fg, win.client_bg)
+    atlasgfx.setColor(win.client_fg, win.client_bg)
     local focused = win.focused
 
     for r = 0, body_h - 1 do
@@ -48,8 +73,10 @@ if not factory then
       end
       if #disp > budget then disp = disp:sub(1, budget) end
       local line = prefix .. disp
-      gfx.text(win:client_x(), win:client_y() + 2 + r, line .. string.rep(" ", cw - #line))
+      atlasgfx.text(win:client_x(), win:client_y() + body_start + r, line .. string.rep(" ", cw - #line))
     end
+
+    shell:paint_dropdown(win)
   end
   end
   _G[CACHE] = factory

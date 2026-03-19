@@ -1,19 +1,20 @@
 --[[
-  AtlasOS settings persisted under /etc/AtlasOS/settings.txt
+  AtlasOS settings persisted under /etc/AtlasOS/settings.json
   developer_mode — when false, Files hides /home/AtlasOS (users use /home/apps).
 ]]
 
-local PATH = "/etc/AtlasOS/settings.txt"
+local json = require("json")
+local PATH = "/etc/AtlasOS/settings.json"
 
 local function parse_raw(raw)
-  local dev = false
-  if type(raw) == "string" then
-    if raw:match("developer_mode%s*=%s*1")
-      or raw:lower():match("developer_mode%s*=%s*true") then
-      dev = true
-    end
+  if type(raw) ~= "string" or raw == "" then
+    return { developer_mode = false }
   end
-  return { developer_mode = dev }
+  local ok, data = pcall(json.decode, raw)
+  if not ok or type(data) ~= "table" then
+    return { developer_mode = false }
+  end
+  return { developer_mode = not not data.developer_mode }
 end
 
 local function read()
@@ -33,7 +34,7 @@ function atlassettings.save(t)
   if fs.write then
     fs.write(
       PATH,
-      "developer_mode=" .. (t.developer_mode and "1" or "0") .. "\n"
+      json.encode({ developer_mode = t.developer_mode and true or false })
     )
   end
 end
