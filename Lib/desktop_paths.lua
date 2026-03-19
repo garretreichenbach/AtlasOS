@@ -5,7 +5,7 @@
 local M = {}
 
 M.ATLASOS_HOME_IN_HOME = "/home/AtlasOS"
-M.TRASH_DIR = "/home/.trash---Wait wrong
+M.TRASH_DIR = "/home/.trash"
 
 function M.join(dir, name)
 	return dir:match("/$") and (dir .. name) or (dir .. "/" .. name)

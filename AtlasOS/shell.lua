@@ -37,7 +37,7 @@ term.registerCommand("apps", function()
   local n = 0
   for _, id in ipairs(startmenu.all_app_ids()) do
     local m = startmenu.registry[id]
-    if m.entry then
+    if m.entry or m.paint_module then
       n = n + 1
       local ic = m.icon
       if type(ic) == "table" then ic = ic[1] or "?"
@@ -55,6 +55,12 @@ term.registerCommand("runapp", function(args)
   local id = args and args[1]
   if not id then print("runapp <app_id>  — see: apps") return end
   local ok, err = startmenu.run_package(id)
+  local meta = startmenu.registry[id]
+  if ok and meta and meta.window then
+    if UI.apply_launch_args then UI.apply_launch_args(meta) end
+    if UI.focus_window_by_title then UI.focus_window_by_title(meta.window) end
+    if UI.redraw then UI.redraw() end
+  end
   if ok then print("App finished: " .. id) else print("Error: " .. tostring(err)) end
 end)
 
@@ -238,3 +244,8 @@ end)
 
 term.setAutoPrompt(true)
 UI.boot()
+-- When /etc/startup.lua loads boot_desktop.lua, enter the desktop loop here.
+if _G.ATLASOS_START_DESKTOP then
+	_G.ATLASOS_START_DESKTOP = nil
+	UI.run_loop()
+end

@@ -1,8 +1,9 @@
 {
   "id": "trash",
   "name": "Trash",
-  "window": "Trash",
-  "description": "Deleted Files (AtlasOS)",
+  "window": "Files",
+  "args": ["/home/.trash"],
+  "description": "Opens Files in the trash folder (/home/.trash)",
   "developer": "AtlasOS",
   "icon": ["┌──┐", "│T▓│", "╲_╱"],
   "icon_row_fg": ["bright_black", "bright_red", "red"],

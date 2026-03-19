@@ -6,6 +6,8 @@
   "icon": ["┌──┐", "│>>│", "└──┘"],
   "icon_fg": "bright_green",
   "icon_taskbar_sel_fg": "black",
-  "entry": "main.lua",
-  "version": "1.0"
+  "version": "1.0",
+  "AtlasOS": {
+    "paint_module": "console_paint.lua"
+  }
 }

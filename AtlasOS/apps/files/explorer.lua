@@ -1,4 +1,9 @@
---[[ Files window + runapp entry (same file; see appinfo entry + paint_module). ]]
+--[[
+  Files window painter factory (see appinfo `AtlasOS.paint_module`).
+  Listing follows `UI.files_dir` / `UI.files_effective_dir()`.
+  To open a path on launch, use appinfo `window` = `"Files"` and `args` = `["/abs/path"]`;
+  the desktop runs `UI.apply_launch_args` before focusing the window (see Trash app).
+]]
 local CACHE = "__AtlasOS_files_factory"
 local factory = _G[CACHE]
 if not factory then
@@ -6,10 +11,19 @@ if not factory then
   local UI = ctx.UI
   local widgets = ctx.widgets
   local window = ctx.window
+  local paths = dofile("/home/lib/desktop_paths.lua")
+  local files_chrome = dofile("/home/lib/files_chrome.lua")
+  local trash_util = dofile("/home/lib/trash_util.lua")
   local appkit = dofile("/home/lib/appkit.lua")
   local shell = appkit.shell({
     on_command = function(id)
-      if id == "files:up" then
+      if id == "files:empty_trash" then
+        if trash_util.empty_trash() then
+          _G.AtlasOS_log = _G.AtlasOS_log or {}
+          _G.AtlasOS_log[#_G.AtlasOS_log + 1] = "[Trash] Emptied."
+        end
+        UI.redraw()
+      elseif id == "files:up" then
         local d = UI.files_effective_dir()
         if d ~= "/" and d ~= "" then
           local p = d:match("^(.+)/[^/]+$") or "/"
@@ -24,27 +38,12 @@ if not factory then
       end
     end,
   })
-  shell:set_menubar({
-    {
-      label = "File",
-      items = {
-        { label = "Up", id = "files:up" },
-        { label = "Home", id = "files:home" },
-        { label = "Apps folder", id = "files:apps" },
-        { label = "Refresh", id = "files:refresh" },
-      },
-    },
-  })
-  shell:set_toolbar({
-    { label = "Up", id = "files:up", w = 6 },
-    { label = "Home", id = "files:home", w = 8 },
-    { label = "Apps", id = "files:apps", w = 8 },
-    { label = "Refresh", id = "files:refresh", w = 10 },
-  })
+  files_chrome.sync_files_shell(shell, false)
 
   return function(win)
     shell:attach(win)
     local dir = UI.files_effective_dir()
+    files_chrome.sync_files_shell(shell, paths.normalize(dir) == paths.normalize(paths.TRASH_DIR))
     if (UI.files_dir or "") ~= dir then
       UI.files_dir = dir
     end

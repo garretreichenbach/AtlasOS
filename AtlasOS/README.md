@@ -1,10 +1,24 @@
 # AtlasOS
 
-**AtlasOS shell:** bottom **taskbar** — **Start [S]** | **search** | fixed **Files / Console / Status** | **your pins** | **Settings** | **Trash**. Bottom strip: **left** — computer block name · **sector** · **system** (LuaMade `Entity` API); **right** — **time + date** (`util.now` + `os.date` when available).
+**AtlasOS shell:** bottom **taskbar** — **Start [S]** | **search** | fixed **Files / Console** | **your pins** | **Settings** | **Trash**. Middle row (3-line bar): **host · cwd**; bottom row: **left** — computer / **sector** / **system**; **right** — **time + date** (`util.now` + `os.date` when available). **Status** is shown on the bar (no window required); pin the Status app if you want the full panel.
+
+## Install on a LuaMade computer
+
+LuaMade runs **`/etc/startup.lua`** at terminal boot when that file exists ([Startup behavior](https://garretreichenbach.github.io/Logiscript/markdown/core/luamade.html#startup-behavior)).
+
+1. Copy this repo into the computer’s virtual FS:
+   - **`Lib/`** → **`/home/lib/`**
+   - **`AtlasOS/`** → **`/home/AtlasOS/`**
+2. Run **`run /home/AtlasOS/installer.lua`**. It checks paths, backs up any existing **`/etc/startup.lua`**, and writes a startup that loads **`boot_desktop.lua`** (shell + graphical desktop loop).
+3. **Reboot** the computer or open a new terminal session.
+
+Without installing startup, you can still run **`run /home/AtlasOS/shell.lua`** then **`desktop`** for the UI only.
+
+**`run /home/AtlasOS/installer.lua uninstall`** — restore the backup startup or remove AtlasOS hook. **`check`** — verify core files exist.
 
 ## Taskbar zones
 
-- **Left (fixed):** Files, Console, Status — not in Start menu groups; cannot unpin.
+- **Left (fixed):** Files, Console — not in Start menu groups; cannot unpin.
 - **Middle:** Only apps you **`pin`** (e.g. Guide, Search, Editor).
 - **Right (fixed):** Settings (second-to-last), Trash (last) — cannot unpin.
 - **`tasknext` / `docknext`** — cycle highlight over the visible slots (narrow screens may hide some middle pins).
@@ -25,7 +39,7 @@ Taskbar search field shows the query and counts (name / in-file).
 - **`start`** — open / close.
 - Pins in **`/etc/AtlasOS/start_menu.txt`** — **user apps only** (not the fixed taskbar icons).
 - **`pin <id> [Group]`** · **`unpin <id>`** · **`pin_group <Name>`**
-- App ids: `welcome` (Guide window) `files` `settings` `console` `status` `trash` … — *pinning* `files`/`settings`/`trash`/`console`/`status` is ignored for the bar (those stay fixed left/right).
+- App ids: `welcome` (Guide window) `files` `settings` `console` `status` `trash` … — *pinning* `files`/`settings`/`trash`/`console` is ignored for the bar (those stay fixed left/right). **`status`** can be pinned if you want a **Status** window shortcut.
 
 ## Other commands
 
@@ -65,11 +79,11 @@ By default, **`/home/AtlasOS`** is **hidden** in Files (and `cd` there is blocke
 
 ## Start menu pins (default)
 
-With **no** `/etc/AtlasOS/start_menu.txt`, every **user-pinnable** system app appears under **Pinned** (Guide, Search, Editor, … — not Files/Console/Status/Settings/Trash, which stay on the taskbar).
+With **no** `/etc/AtlasOS/start_menu.txt`, every **user-pinnable** system app appears under **Pinned** (Guide, Search, Editor, Status, … — not Files/Console/Settings/Trash, which stay on fixed taskbar slots).
 
 ## System apps (`/home/AtlasOS/apps/`)
 
-Every built-in (Guide via `welcome`, Files, Console, Status, Settings, Trash, Search, …) is a folder with **`appinfo.json`** + **`main.lua`**. Copy the full repo **`AtlasOS/apps/`** tree to **`/home/AtlasOS/apps/`**. If a package is missing, the taskbar still reserves slots (placeholder `?`) and default pins may show stubs until you install the folder.
+Every built-in (Guide via `welcome`, Files, Console, …) is a folder with **`appinfo.json`** and usually a **`paint_module`** Lua file (some also use an **`entry`** script for `runapp`). Copy the repo **`AtlasOS/apps/`** tree to **`/home/AtlasOS/apps/`**. If a package is missing, the taskbar still reserves slots (placeholder `?`) and default pins may show stubs until you install the folder.
 
 ## App packages
 
@@ -88,6 +102,6 @@ The desktop targets the current [Graphics API](https://garretreichenbach.github.
 - `/home/lib/appkit.lua` — menu bar, dropdowns, toolbar row for window clients (see `APPINFO.md`)
 - `/home/lib/startmenu.lua` — registry, groups, fixed-slot rules
 - `/home/AtlasOS/ui.lua` — taskbar, search steps, windows
-- `/home/.trash` — Trash window lists this folder
+- `/home/.trash` — Trash taskbar icon focuses **Files** here (`appinfo` `args`); legacy layouts may still have a **Trash** window title (same explorer UI)
 
-**Installer:** `installer.lua` may lag the repo; copy updated `ui.lua` / `shell.lua` / `window.lua` / `startmenu.lua` manually if needed.
+See **Install on a LuaMade computer** above for `installer.lua` and `/etc/startup.lua`.

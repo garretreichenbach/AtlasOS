@@ -7,6 +7,8 @@
   "icon": ["╭──╮", "│i│", "╰──╯"],
   "icon_row_fg": ["bright_cyan", "cyan", "bright_blue"],
   "icon_taskbar_sel_fg": "black",
-  "entry": "main.lua",
-  "version": "1.1"
+  "version": "1.1",
+  "AtlasOS": {
+    "paint_module": "guide_paint.lua"
+  }
 }

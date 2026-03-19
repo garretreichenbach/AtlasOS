@@ -26,9 +26,14 @@ function appinfo.load_package(package_dir)
   end
   local name = t.name
   if type(name) ~= "string" or name == "" then name = id end
+  local paint_mod = type(t.AtlasOS) == "table" and type(t.AtlasOS.paint_module) == "string"
+    and t.AtlasOS.paint_module:match("%S")
   local entry = t.entry
   if type(entry) ~= "string" or entry == "" then
-    return nil, "entry required (lua file path)"
+    if not paint_mod then
+      return nil, "entry required (lua file), unless AtlasOS.paint_module is set"
+    end
+    entry = nil
   end
   local args = t.args
   if args ~= nil then

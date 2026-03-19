@@ -4,7 +4,7 @@
     + any extra folders under /home/AtlasOS/apps
     /home/apps/<folder>/appinfo.json       (user; cannot override system ids)
 
-  Left (fixed):  files, console, status  |  Right: settings, trash
+  Left (fixed):  files, console  |  Right: settings, trash  (host · cwd in taskbar gap; Status app optional)
   Persist: /etc/AtlasOS/start_menu.txt
 ]]
 
@@ -79,7 +79,7 @@ local WINDOW_FOR_SLOT = {
   console = "Console",
   status = "Status",
   settings = "Settings",
-  trash = "Trash",
+  trash = "Files",
 }
 
 local function register_from_app(app)
@@ -195,7 +195,7 @@ end
 
 startmenu.refresh_packages()
 
-startmenu.TASKBAR_LEFT = { "files", "console", "status" }
+startmenu.TASKBAR_LEFT = { "files", "console" }
 startmenu.TASKBAR_RIGHT = { "settings", "trash" }
 
 function startmenu.is_taskbar_fixed(id)
@@ -377,27 +377,33 @@ end
 
 function startmenu.run_package(id)
   local m = startmenu.registry[id]
-  if not m or not m.entry or not m.package_dir or m.package_dir == "" then
-    return false, "not an installed package app (needs appinfo.json + entry)"
-  end
-  local path = m.entry
-  if path:sub(1, 1) ~= "/" then
-    path = m.package_dir .. "/" .. path
-  end
-  if not fs.read(path) then
-    return false, "entry not found: " .. path
+  if not m or not m.package_dir or m.package_dir == "" then
+    return false, "not an installed package app (needs appinfo.json)"
   end
   local argv = {}
   for j = 1, #(m.args or {}) do
     argv[j] = tostring(m.args[j])
   end
-  _G.AtlasOS_APP = { id = id, package_dir = m.package_dir, args = argv }
-  local ok, err = pcall(dofile, path)
-  _G.AtlasOS_APP = nil
-  if not ok then
-    return false, tostring(err)
+  local path = m.entry
+  if type(path) == "string" and path ~= "" then
+    if path:sub(1, 1) ~= "/" then
+      path = m.package_dir .. "/" .. path
+    end
+    if not fs.read(path) then
+      return false, "entry not found: " .. path
+    end
+    _G.AtlasOS_APP = { id = id, package_dir = m.package_dir, args = argv }
+    local ok, err = pcall(dofile, path)
+    _G.AtlasOS_APP = nil
+    if not ok then
+      return false, tostring(err)
+    end
+    return true
   end
-  return true
+  if m.paint_module or m.window then
+    return true
+  end
+  return false, "no entry script (set entry or AtlasOS.paint_module / window)"
 end
 
 return startmenu

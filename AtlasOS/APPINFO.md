@@ -7,12 +7,12 @@ Installable apps live under **`/home/apps/<package_name>/`**. Each package **mus
 | Field | Type | Description |
 |-------|------|-------------|
 | `name` | string | Display name (Start menu, `apps`). |
-| `entry` | string | Lua file to run: path **relative to the package dir** (e.g. `main.lua`) or absolute (`/home/apps/foo/main.lua`). |
 
 ## Optional fields
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `entry` | string | Script for **`runapp`** (path relative to package or absolute). **Omit** if **`AtlasOS.paint_module`** is set: the desktop loads the painter; **`runapp`** still succeeds and focuses **`window`** when given. |
 | `id` | string | App id for pins / `runapp`. Default: parent folder name. Use only `[A-Za-z0-9_-]`. **Must not** collide with built-ins: `welcome`, `files`, `settings`, `console`, `status`, `trash`, `editor`, `search`. |
 | `description` | string | Short blurb (`apps`, future UI). |
 | `icon` | string **or** string[] | **ASCII / Unicode art:** multiline string (`\n` between rows) or JSON array of row strings. Start menu tiles use up to **4×12** cells; taskbar shows up to **2 rows × 6** columns (trimmed). |
@@ -22,8 +22,8 @@ Installable apps live under **`/home/apps/<package_name>/`**. Each package **mus
 | `icon_row_fg` | string[] | Per-row foreground (1-based index matches `icon` rows); overrides `icon_fg` for that row. |
 | `icon_taskbar_sel_fg` | string | Foreground when the taskbar slot is **selected** (highlight bar); default `black`. |
 | `version` | string / number | Metadata only. |
-| `args` | array | Strings/numbers passed to the app as **`_G.AtlasOS_APP.args`** (table of strings). |
-| `window` | string | Reserved for future AtlasOS window integration. |
+| `args` | array | Strings/numbers passed to the app as **`_G.AtlasOS_APP.args`** (table of strings). Also used when **`window`** is set (see below). |
+| `window` | string | Built-in window title to **focus** after launch (taskbar / `runapp`). If **`window`** is **`"Files"`**, the first **`args`** entry (if non-empty) is treated as a directory and passed to **`UI.files_set_dir`** before the window is focused (same mechanism as the Trash taskbar icon). |
 | `AtlasOS` | object | Reserved for future flags (e.g. sandbox, permissions). |
 
 ## AtlasOS system packages (`/home/AtlasOS/apps/`)
@@ -36,24 +36,29 @@ Then any **other** subfolder of `/home/AtlasOS/apps/` is loaded (by id). User pa
 
 | `AtlasOS` field | Purpose |
 |---------------|---------|
-| **`paint_module`** | Lua file relative to package; factory `return function(ctx) return function(win) … end end` paints a **built-in window** (e.g. `files` → **Files**). |
+| **`paint_module`** | Lua file relative to package; factory `function(ctx) return function(win) … end end` paints a **built-in window** (e.g. **Files** `explorer.lua`, **Guide** `guide_paint.lua`, **Status** `status_paint.lua`, **Console** `console_paint.lua`, **Settings** `settings_ui.lua`). |
 | **`role`**: `"search_engine"` | This package supplies taskbar search. |
 | **`search_engine`** | Lua module path (e.g. `search_engine.lua`) returning `{ clear, begin, step, get_state, draw_taskbar }`. |
 
 Example layout:
 
-- `/home/AtlasOS/apps/files/appinfo.json` + `explorer.lua` + `main.lua`
-- `/home/AtlasOS/apps/settings/appinfo.json` + `settings_ui.lua` (categories + controls)
-- `/home/AtlasOS/apps/search/appinfo.json` + `search_engine.lua` + `main.lua`
+- `/home/AtlasOS/apps/files/appinfo.json` + `explorer.lua` (entry + `paint_module`)
+- `/home/AtlasOS/apps/welcome/appinfo.json` + `guide_paint.lua` (`paint_module` only)
+- `/home/AtlasOS/apps/status/appinfo.json` + `status_paint.lua` (`paint_module` only)
+- `/home/AtlasOS/apps/console/appinfo.json` + `console_paint.lua` (`paint_module` only)
+- `/home/AtlasOS/apps/settings/appinfo.json` + `settings_ui.lua` (entry + `paint_module`)
+- `/home/AtlasOS/apps/search/appinfo.json` + `search_engine.lua` + `main.lua` (or entry-only)
 
 A package in **`/home/apps/`** with `role: search_engine` **replaces** the taskbar search implementation (last scan wins).
 
 ## Runtime
 
-When the app **`entry`** is executed:
+When the app **`entry`** script is executed (`runapp`):
 
 - **`_G.AtlasOS_APP`** is set to `{ id, package_dir, args }` where `args` is an array of strings from `appinfo.args`.
 - After the script returns, `AtlasOS_APP` is cleared.
+
+If there is **no** `entry`, **`runapp <id>`** still succeeds for packages with **`paint_module`** and/or **`window`**, focuses the window, and does not run a script.
 
 Use **`runapp <id>`** from the terminal or launch from the Start menu / taskbar (if pinned).
 

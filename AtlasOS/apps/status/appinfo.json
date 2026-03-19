@@ -2,11 +2,13 @@
   "id": "status",
   "name": "Status",
   "window": "Status",
-  "description": "Host & Clock (AtlasOS)",
+  "description": "Optional detail window; host · cwd also on the taskbar strip",
   "developer": "AtlasOS",
   "icon": ["┌─┐", "│#│", "├─┤"],
   "icon_row_fg": ["yellow", "bright_red", "green"],
   "icon_taskbar_sel_fg": "black",
-  "entry": "main.lua",
-  "version": "1.0"
+  "version": "1.0",
+  "AtlasOS": {
+    "paint_module": "status_paint.lua"
+  }
 }

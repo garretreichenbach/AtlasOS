@@ -167,6 +167,18 @@ function UI.files_effective_dir()
 	return d
 end
 
+--- Apply `appinfo.args` that affect the desktop before focusing `meta.window`.
+--- For `window` == `"Files"`, the first arg (if non-empty) is passed to `files_set_dir`.
+function UI.apply_launch_args(meta)
+	if not meta or meta.window ~= "Files" then return end
+	local a = meta.args
+	if type(a) ~= "table" then return end
+	local path = a[1]
+	if path == nil then return end
+	path = tostring(path)
+	if path:match("%S") then UI.files_set_dir(path) end
+end
+
 UI._search_api_cached = nil
 UI._files_painter = nil
 
@@ -212,6 +224,9 @@ function UI.invalidate_packages()
 	UI._files_painter = nil
 	UI._editor_painter = nil
 	UI._settings_painter = nil
+	UI._welcome_painter = nil
+	UI._status_painter = nil
+	UI._console_painter = nil
 end
 
 function UI.search_clear()
@@ -264,7 +279,7 @@ end
 
 function UI.update_size()
 	local w, h = UI._size_get()
-	-- Taskbar needs ~54 cols for Start + search + 3 left icons + Settings + Trash + clock
+	-- Taskbar needs room for Start + search + 2 left icons + pins + Settings + Trash + clock/status strip
 	UI.W = math.max(54, math.floor(w or 80))
 	UI.H = math.max(12, math.floor(h or 24))
 	-- 3 rows: icons+search, search stats / filler, entity+date (QoL dock strip)
@@ -374,11 +389,9 @@ end
 -- Default layout: fractions of workspace (wx..wx+ww, wy..wy+wh)
 local default_layout = {
 	{ title = "Guide",    xf = 0.03, yf = 0.06, wf = 0.52, hf = 0.62 },
-	{ title = "Status",   xf = 0.50, yf = 0.08, wf = 0.46, hf = 0.38 },
 	{ title = "Files",    xf = 0.03, yf = 0.10, wf = 0.34, hf = 0.52 },
 	{ title = "Settings", xf = 0.40, yf = 0.32, wf = 0.56, hf = 0.40 },
 	{ title = "Console",  xf = 0.06, yf = 0.58, wf = 0.86, hf = 0.36 },
-	{ title = "Trash",    xf = 0.62, yf = 0.52, wf = 0.34, hf = 0.28 },
 }
 
 function UI.build_desktop()
@@ -640,12 +653,14 @@ function UI.launch_app(id)
 	local meta = startmenu.registry[id]
 	if not meta then return end
 	if startmenu.is_taskbar_fixed(id) and meta.window then
+		UI.apply_launch_args(meta)
 		UI.focus_window_by_title(meta.window)
 		return
 	end
 	if meta.entry and meta.package_dir then
 		local ok, err = startmenu.run_package(id)
 		if ok then
+			UI.apply_launch_args(meta)
 			if meta.window then
 				UI.focus_window_by_title(meta.window)
 			else
@@ -658,7 +673,10 @@ function UI.launch_app(id)
 		UI.redraw()
 		return
 	end
-	if meta.window then UI.focus_window_by_title(meta.window) end
+	if meta.window then
+		UI.apply_launch_args(meta)
+		UI.focus_window_by_title(meta.window)
+	end
 end
 
 function UI.toggle_start()
@@ -970,7 +988,11 @@ function UI.draw_taskbar()
 	if th >= 3 then
 		local gap_x = 7 + sw + 1
 		local gap_w = settings_x - gap_x - 1
-		if gap_w >= 7 then
+		if gap_w >= 12 then
+			atlasgfx.setColor(28, tb)
+			local status_txt = deskutil.taskbar_status_line(gap_w)
+			atlasgfx.text(gap_x + math.max(0, math.floor((gap_w - #status_txt) / 2)), y0 + 1, status_txt)
+		elseif gap_w >= 7 then
 			atlasgfx.setColor(28, tb)
 			local lab = "AtlasOS"
 			atlasgfx.text(gap_x + math.max(0, math.floor((gap_w - #lab) / 2)), y0 + 1, lab)

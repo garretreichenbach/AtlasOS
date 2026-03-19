@@ -83,6 +83,35 @@ function M.dock_datetime_str()
 	return string.format("%02d:%02d", math.floor(s / 3600), math.floor((s % 3600) / 60)) .. "  (no os.date)"
 end
 
+--- Host + working directory for the taskbar center strip (no window required).
+function M.taskbar_status_line(max_cols)
+	max_cols = math.max(8, tonumber(max_cols) or 48)
+	local host = M.hostname()
+	local cwd = (fs and fs.getCurrentDir and fs.getCurrentDir()) or "/home"
+	if cwd:sub(1, 5) == "/home" then
+		if cwd == "/home" then
+			cwd = "~"
+		else
+			cwd = "~" .. cwd:sub(6)
+		end
+	end
+	local sep = " · "
+	local s = host .. sep .. cwd
+	if #s <= max_cols then return s end
+	local budget = max_cols - #host - #sep - 1
+	if budget < 4 then
+		s = host .. sep .. "…"
+		if #s > max_cols then s = s:sub(1, max_cols - 1) .. "…" end
+		return s
+	end
+	if #cwd > budget then
+		cwd = "…" .. cwd:sub(math.max(1, #cwd - budget + 2))
+	end
+	s = host .. sep .. cwd
+	if #s > max_cols then s = s:sub(1, max_cols - 1) .. "…" end
+	return s
+end
+
 function M.hostname()
 	if console and console.getBlock then
 		local ok, block = pcall(function() return console.getBlock() end)
