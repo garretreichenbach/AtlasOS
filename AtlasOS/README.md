@@ -37,7 +37,7 @@ Taskbar search field shows the query and counts (name / in-file).
 ## Start menu
 
 - **`start`** — open / close.
-- Pins in **`/etc/AtlasOS/start_menu.txt`** — **user apps only** (not the fixed taskbar icons).
+- Pins in **`/etc/AtlasOS/start_menu.json`** (`{ "version": 1, "groups": [ { "name": "Pinned", "ids": ["welcome", …] } ] }`) — **user apps only** (not the fixed taskbar icons). Legacy **`start_menu.txt`** is read once and migrated to JSON, then removed.
 - **`pin <id> [Group]`** · **`unpin <id>`** · **`pin_group <Name>`**
 - App ids: `welcome` (Guide window) `files` `settings` `console` `status` `trash` … — *pinning* `files`/`settings`/`trash`/`console` is ignored for the bar (those stay fixed left/right). **`status`** can be pinned if you want a **Status** window shortcut.
 
@@ -79,11 +79,11 @@ By default, **`/home/AtlasOS`** is **hidden** in Files (and `cd` there is blocke
 
 ## Start menu pins (default)
 
-With **no** `/etc/AtlasOS/start_menu.txt`, every **user-pinnable** system app appears under **Pinned** (Guide, Search, Editor, Status, … — not Files/Console/Settings/Trash, which stay on fixed taskbar slots).
+With **no** `start_menu.json` (and no migratable legacy `.txt`), every **user-pinnable** system app appears under **Pinned** (Guide, Search, Editor, Status, … — not Files/Console/Settings/Trash, which stay on fixed taskbar slots).
 
 ## System apps (`/home/AtlasOS/apps/`)
 
-Every built-in (Guide via `welcome`, Files, Console, …) is a folder with **`appinfo.json`** and usually a **`paint_module`** Lua file (some also use an **`entry`** script for `runapp`). Copy the repo **`AtlasOS/apps/`** tree to **`/home/AtlasOS/apps/`**. If a package is missing, the taskbar still reserves slots (placeholder `?`) and default pins may show stubs until you install the folder.
+Every built-in (Guide via `welcome`, Files, Console, **Chat** — servers/channels on LuaMade **`net`**, …) is a folder with **`appinfo.json`** and usually a **`paint_module`** Lua file (some also use an **`entry`** script for `runapp`). Copy the repo **`AtlasOS/apps/`** tree to **`/home/AtlasOS/apps/`** and **`Lib/atlas_chat_net.lua`** to **`/home/lib/`**. If a package is missing, the taskbar still reserves slots (placeholder `?`) and default pins may show stubs until you install the folder. Chat uses [Network Interface API](https://garretreichenbach.github.io/Logiscript/markdown/io/networking.html) global channels (`openChannel` / `sendChannel` / `receiveChannel`).
 
 ## App packages
 

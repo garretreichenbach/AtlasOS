@@ -1,0 +1,13 @@
+{
+  "id": "chat",
+  "name": "Chat",
+  "window": "Chat",
+  "description": "Servers & channels over LuaMade net (Discord-lite basics)",
+  "icon": ["+----+", "| >< |", "+----+"],
+  "icon_fg": "bright_cyan",
+  "icon_taskbar_sel_fg": "black",
+  "version": "0.1",
+  "AtlasOS": {
+    "paint_module": "chat_paint.lua"
+  }
+}

@@ -5,10 +5,12 @@
     /home/apps/<folder>/appinfo.json       (user; cannot override system ids)
 
   Left (fixed):  files, console  |  Right: settings, trash  (host · cwd in taskbar gap; Status app optional)
-  Persist: /etc/AtlasOS/start_menu.txt
+  Persist: /etc/AtlasOS/start_menu.json  (legacy: start_menu.txt, auto-migrated once)
 ]]
 
-local PATH = "/etc/AtlasOS/start_menu.txt"
+local json = require("json")
+local PATH_JSON = "/etc/AtlasOS/start_menu.json"
+local PATH_LEGACY = "/etc/AtlasOS/start_menu.txt"
 local AtlasOS_APPS = "/home/AtlasOS/apps"
 --- Folders to load first (order); id comes from each appinfo.json.
 local SYSTEM_FOLDER_ORDER = {
@@ -20,6 +22,7 @@ local SYSTEM_FOLDER_ORDER = {
   "trash",
   "search",
   "editor",
+  "chat",
 }
 
 local startmenu = {}
@@ -221,6 +224,48 @@ local function scrub_groups(groups)
   end
 end
 
+local function parse_legacy_txt(raw)
+  local groups = {}
+  local cur = nil
+  for line in tostring(raw or ""):gmatch("[^\r\n]+") do
+    line = line:match("^%s*(.-)%s*$") or ""
+    if line == "" or line == "v1" then
+    elseif line:match("^group%s+") then
+      cur = { name = line:match("^group%s+(.+)$") or "Pinned", ids = {} }
+      groups[#groups + 1] = cur
+    elseif cur and startmenu.registry[line] and startmenu.can_user_pin(line) then
+      cur.ids[#cur.ids + 1] = line
+    end
+  end
+  return groups
+end
+
+local function groups_from_json(t)
+  if type(t) ~= "table" then return {} end
+  local arr = t.groups
+  if type(arr) ~= "table" then return {} end
+  local groups = {}
+  for _, g in ipairs(arr) do
+    if type(g) == "table" and type(g.name) == "string" and g.name ~= "" then
+      local ids = {}
+      if type(g.ids) == "table" then
+        for _, id in ipairs(g.ids) do
+          if type(id) == "string" and startmenu.registry[id] and startmenu.can_user_pin(id) then
+            ids[#ids + 1] = id
+          end
+        end
+      end
+      groups[#groups + 1] = { name = g.name, ids = ids }
+    end
+  end
+  return groups
+end
+
+local function try_remove_legacy()
+  if fs.delete then pcall(fs.delete, PATH_LEGACY) end
+  if fs.remove then pcall(fs.remove, PATH_LEGACY) end
+end
+
 function startmenu.default_groups()
   local ids = {}
   local seen = {}
@@ -252,36 +297,48 @@ function startmenu.default_groups()
 end
 
 function startmenu.load()
-  local raw = fs.read(PATH)
-  if not raw or raw == "" then return startmenu.default_groups() end
-  local groups = {}
-  local cur = nil
-  for line in raw:gmatch("[^\r\n]+") do
-    line = line:match("^%s*(.-)%s*$") or ""
-    if line == "" or line == "v1" then
-    elseif line:match("^group%s+") then
-      cur = { name = line:match("^group%s+(.+)$") or "Pinned", ids = {} }
-      groups[#groups + 1] = cur
-    elseif cur and startmenu.registry[line] and startmenu.can_user_pin(line) then
-      cur.ids[#cur.ids + 1] = line
+  if fs.read then
+    local jraw = fs.read(PATH_JSON)
+    if type(jraw) == "string" and jraw:gsub("%s", "") ~= "" then
+      local ok, t = pcall(json.decode, jraw)
+      if ok and type(t) == "table" then
+        local groups = groups_from_json(t)
+        scrub_groups(groups)
+        if #groups > 0 then return groups end
+      end
+    end
+
+    local traw = fs.read(PATH_LEGACY)
+    if type(traw) == "string" and traw ~= "" then
+      local groups = parse_legacy_txt(traw)
+      scrub_groups(groups)
+      if #groups > 0 then
+        startmenu.save(groups)
+        try_remove_legacy()
+        return groups
+      end
     end
   end
-  scrub_groups(groups)
-  if #groups == 0 then return startmenu.default_groups() end
-  return groups
+  return startmenu.default_groups()
 end
 
 function startmenu.save(groups)
   scrub_groups(groups)
-  fs.makeDir("/etc/AtlasOS")
-  local lines = { "v1" }
+  if not fs.makeDir or not fs.write then return end
+  pcall(fs.makeDir, "/etc/AtlasOS")
+  local out_groups = {}
   for _, g in ipairs(groups) do
-    lines[#lines + 1] = "group " .. g.name
+    local ids = {}
     for _, id in ipairs(g.ids) do
-      if startmenu.can_user_pin(id) then lines[#lines + 1] = id end
+      if startmenu.can_user_pin(id) then ids[#ids + 1] = id end
     end
+    out_groups[#out_groups + 1] = { name = g.name, ids = ids }
   end
-  fs.write(PATH, table.concat(lines, "\n"))
+  local payload = { version = 1, groups = out_groups }
+  local ok, encoded = pcall(json.encode, payload)
+  if ok and type(encoded) == "string" then
+    pcall(fs.write, PATH_JSON, encoded)
+  end
 end
 
 local function remove_id(groups, id)

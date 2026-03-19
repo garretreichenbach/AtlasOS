@@ -738,6 +738,12 @@ function UI.handle_event(e)
 				return
 			end
 		end
+		if fw and not fw.minimized and type(fw._atlas_on_key) == "function" then
+			if fw._atlas_on_key(e) then
+				UI.redraw()
+				return
+			end
+		end
 		if key == 1 then
 			UI.start_open = false
 			UI.activities_open = false
@@ -882,6 +888,12 @@ function UI.handle_event(e)
 				local rcx = cx - win:client_x()
 				local rcy = cy - win:client_y()
 				if win._appkit_shell and win._appkit_shell:handle_click(rcx, rcy, win) then
+					window.Desktop.bring_to_front(UI.desk, win)
+					window.Desktop.set_focus(UI.desk, win)
+					UI.redraw()
+					return
+				end
+				if type(win._atlas_client_click) == "function" and win._atlas_client_click(rcx, rcy) then
 					window.Desktop.bring_to_front(UI.desk, win)
 					window.Desktop.set_focus(UI.desk, win)
 					UI.redraw()
@@ -1313,7 +1325,12 @@ function UI.input_text_active()
 	local d = UI.desk
 	if not d then return false end
 	local fw = window.Desktop.focused(d)
-	return fw and not fw.minimized and fw.title == "Editor"
+	if not fw or fw.minimized then return false end
+	if fw.title == "Editor" then return true end
+	if type(fw._atlas_input_text_active) == "function" and fw._atlas_input_text_active() then
+		return true
+	end
+	return false
 end
 
 --- Keys that only make sense in a text field; cancel via input.cancelKeyEvent when not editing.
