@@ -1,0 +1,11 @@
+{
+  "id": "console",
+  "name": "Console",
+  "window": "Console",
+  "description": "Terminal log",
+  "icon": ["┌──┐", "│>>│", "└──┘"],
+  "icon_fg": "bright_green",
+  "icon_taskbar_sel_fg": "black",
+  "entry": "main.lua",
+  "version": "1.0"
+}

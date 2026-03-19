@@ -1,0 +1,10 @@
+{
+  "id": "example_app",
+  "name": "Example App",
+  "description": "Template — copy to /home/apps/example_app/",
+  "icon": ["╭──╮", "│+│", "╰──╯"],
+  "icon_compact": "+",
+  "version": "1.0",
+  "entry": "main.lua",
+  "args": []
+}

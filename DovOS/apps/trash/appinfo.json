@@ -1,0 +1,12 @@
+{
+  "id": "trash",
+  "name": "Trash",
+  "window": "Trash",
+  "description": "Deleted Files (DovOS)",
+  "developer": "DovOS",
+  "icon": ["┌──┐", "│T▓│", "╲_╱"],
+  "icon_row_fg": ["bright_black", "bright_red", "red"],
+  "icon_taskbar_sel_fg": "black",
+  "entry": "main.lua",
+  "version": "1.0"
+}
