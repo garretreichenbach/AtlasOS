@@ -242,6 +242,19 @@ term.registerCommand("AtlasOS", function()
   print("AtlasOS — start menu + taskbar  |  start  tasknext  go  pin")
 end)
 
+do
+	local okp, ap = pcall(dofile, "/home/lib/atlasprofile.lua")
+	if okp and ap and type(ap.display_name) == "function" then
+		local name = tostring(ap.display_name() or "user"):gsub("%c", "")
+		if name == "" then name = "user" end
+		local tmpl = name .. " @ {hostname}:{dir}$ "
+		if term.setPromptTemplate and type(term.setPromptTemplate) == "function" then
+			pcall(term.setPromptTemplate, tmpl)
+		elseif term.setPrompt and type(term.setPrompt) == "function" then
+			pcall(term.setPrompt, name .. "> ")
+		end
+	end
+end
 term.setAutoPrompt(true)
 UI.boot()
 -- When /etc/startup.lua loads boot_desktop.lua, enter the desktop loop here.

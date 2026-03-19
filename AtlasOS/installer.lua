@@ -17,20 +17,25 @@ local STARTUP_BACKUP = "/etc/startup.lua.atlasos_backup"
 
 local function check_paths()
 	local missing = {}
-	if not fs.read("/home/AtlasOS/shell.lua") then
-		missing[#missing + 1] = "/home/AtlasOS/shell.lua"
-	end
-	if not fs.read("/home/AtlasOS/ui.lua") then
-		missing[#missing + 1] = "/home/AtlasOS/ui.lua"
-	end
-	if not fs.read("/home/lib/startmenu.lua") then
-		missing[#missing + 1] = "/home/lib/startmenu.lua"
+	for _, p in ipairs({
+		"/home/AtlasOS/installer_gate.lua",
+		"/home/AtlasOS/installer_ui.lua",
+		"/home/AtlasOS/boot_desktop.lua",
+		"/home/AtlasOS/shell.lua",
+		"/home/AtlasOS/ui.lua",
+		"/home/lib/startmenu.lua",
+		"/home/lib/atlasgfx.lua",
+		"/home/lib/atlasinstall.lua",
+		"/home/lib/atlasprofile.lua",
+		"/home/lib/atlastheme.lua",
+	}) do
+		if not fs.read(p) then missing[#missing + 1] = p end
 	end
 	return missing
 end
 
 local STARTUP_BODY = [[-- AtlasOS auto-start (LuaMade runs this at boot; see Logiscript "Startup behavior")
-dofile("/home/AtlasOS/boot_desktop.lua")
+dofile("/home/AtlasOS/installer_gate.lua")
 ]]
 
 local function install()
@@ -76,7 +81,7 @@ local function uninstall()
 		return true
 	end
 	local body = fs.read(STARTUP_PATH) or ""
-	if not body:match("boot_desktop%.lua") and not body:match("AtlasOS") then
+	if not body:match("boot_desktop%.lua") and not body:match("installer_gate%.lua") and not body:match("AtlasOS") then
 		print(STARTUP_PATH .. " does not look like AtlasOS startup — not removing.")
 		return false
 	end
