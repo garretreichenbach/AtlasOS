@@ -1,3 +1,0 @@
-- This is a repo for the LuaMade custom OS, AtlasOS.
-- LuaMade is a StarMade mod that aims to replicate ComputerCraft in StarMade. It runs computers and lua scripts in secure, sandboxed environments.
-- View LuaMade Docs at https://garretreichenbach.github.io/Logiscript/
