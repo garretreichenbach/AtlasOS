@@ -1,6 +1,6 @@
 --[[
-  DovOS installable app packages: appinfo.json per package directory.
-  See /home/dovos/APPINFO.md (or repo DovOS/APPINFO.md).
+  AtlasOS installable app packages: appinfo.json per package directory.
+  See /home/AtlasOS/APPINFO.md (or repo AtlasOS/APPINFO.md).
 ]]
 
 local json = dofile("/home/lib/json.lua")
@@ -92,7 +92,7 @@ function appinfo.load_package(package_dir)
     args = args,
     window = window,
     package_dir = package_dir,
-    dovos = type(t.dovos) == "table" and t.dovos or nil,
+    AtlasOS = type(t.AtlasOS) == "table" and t.AtlasOS or nil,
     _raw = t,
   }
 end

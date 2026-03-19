@@ -5,7 +5,7 @@
   Mod API: input.poll() -> single event or nil; input.waitFor(ms); input.clear();
            input.setEnabled(bool); input.isEnabled(); input.pending()
            Optional: input.cancelEvent(e) — stop key from reaching terminal / game bar
-           when not handling it in a text field (see DovOS UI.run_loop).
+           when not handling it in a text field (see AtlasOS UI.run_loop).
   Events: { type="key", key=GLFW, char, down, shift, ctrl, alt }
           { type="mouse", button, pressed, released, x, y, dx, dy, wheel }
 

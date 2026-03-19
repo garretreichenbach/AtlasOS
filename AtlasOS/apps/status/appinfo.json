@@ -1,0 +1,12 @@
+{
+  "id": "status",
+  "name": "Status",
+  "window": "Status",
+  "description": "Host & Clock (AtlasOS)",
+  "developer": "AtlasOS",
+  "icon": ["┌─┐", "│#│", "├─┤"],
+  "icon_row_fg": ["yellow", "bright_red", "green"],
+  "icon_taskbar_sel_fg": "black",
+  "entry": "main.lua",
+  "version": "1.0"
+}

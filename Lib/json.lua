@@ -1,5 +1,5 @@
 --[[
-  Minimal JSON decode / encode for DovOS (no native JSON in LuaMade).
+  Minimal JSON decode / encode for AtlasOS (no native JSON in LuaMade).
   Supports: objects, arrays, strings, numbers, true, false, null.
   Strings: escapes \" \\ \/ \b \f \n \r \t \uXXXX (BMP → UTF-8; else ?).
 ]]

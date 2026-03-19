@@ -1,0 +1,15 @@
+# AtlasOS — LuaMade canvas overlay (Text Graphics API)
+# Copy to /etc/AtlasOS/gfx.conf on the ship computer.
+# https://garretreichenbach.github.io/Logiscript/markdown/graphics/text-graphics.html
+#
+# cell_scale: uniform X/Y scale for every cell (global canvas sharpness).
+# Range 0.5 .. 4.0 (LuaMade). Higher = more screen pixels per cell.
+cell_scale=1.5
+
+# Per-region pixel scale (setPixelScale): sharper glyphs in the same character grid.
+# icon_pixel_scale — Start menu tile ASCII art (default 2.0)
+# taskbar_icon_pixel_scale — taskbar slot icons (default 1.75)
+# search_pixel_scale — taskbar search box (default 1.25)
+icon_pixel_scale=2
+taskbar_icon_pixel_scale=1.75
+search_pixel_scale=1.25

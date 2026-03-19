@@ -1,0 +1,15 @@
+{
+  "id": "files",
+  "name": "Files",
+  "description": "File Explorer (AtlasOS)",
+  "developer": "AtlasOS",
+  "icon": ["╔▼╗", "║▓║", "╚═╝"],
+  "icon_row_fg": ["bright_blue", "bright_cyan", "blue"],
+  "icon_taskbar_sel_fg": "black",
+  "version": "1.0",
+  "entry": "explorer.lua",
+  "icon_compact": "▓",
+  "AtlasOS": {
+    "paint_module": "explorer.lua"
+  }
+}

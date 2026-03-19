@@ -2,7 +2,7 @@
 
 Global **`gfx`**: [Text Graphics API](https://garretreichenbach.github.io/Logiscript/markdown/graphics/text-graphics.html).
 
-DovOS uses **`gfx.setCellScale`** (global) and **`gfx.setPixelScale(x,y,sx,sy)`** on taskbar icons, Start menu tiles, and the search field so those glyphs use more overlay pixels per cell — see `/etc/dovos/gfx.conf` (`icon_pixel_scale`, `taskbar_icon_pixel_scale`, `search_pixel_scale`).
+AtlasOS uses **`gfx.setCellScale`** (global) and **`gfx.setPixelScale(x,y,sx,sy)`** on taskbar icons, Start menu tiles, and the search field so those glyphs use more overlay pixels per cell — see `/etc/AtlasOS/gfx.conf` (`icon_pixel_scale`, `taskbar_icon_pixel_scale`, `search_pixel_scale`).
 
 ## Lib modules
 
@@ -12,11 +12,11 @@ DovOS uses **`gfx.setCellScale`** (global) and **`gfx.setPixelScale(x,y,sx,sy)`*
 | `json.decode(str)` | Parse JSON → Lua tables / scalars. |
 | `json.encode(val)` | Lua value → JSON string. |
 
-### `dovsettings.lua`
+### `atlassettings.lua`
 | API | |
 |-----|-----|
-| `dovsettings.developer_mode()` | Whether Files shows `/home/dovos`. |
-| `dovsettings.set_developer_mode(bool)` / `toggle_developer_mode()` | Persist to `/etc/dovos/settings.txt`. |
+| `atlassettings.developer_mode()` | Whether Files shows `/home/AtlasOS`. |
+| `atlassettings.set_developer_mode(bool)` / `toggle_developer_mode()` | Persist to `/etc/AtlasOS/settings.txt`. |
 
 ### `appinfo.lua`
 | API | |
@@ -24,7 +24,7 @@ DovOS uses **`gfx.setCellScale`** (global) and **`gfx.setPixelScale(x,y,sx,sy)`*
 | `appinfo.load_package(dir)` | Read `dir/appinfo.json`, validate. |
 | `appinfo.scan("/home/apps")` | List valid packages. |
 
-See **`DovOS/APPINFO.md`** for package schema.
+See **`AtlasOS/APPINFO.md`** for package schema.
 
 ### `window.lua`
 | API | |
@@ -58,4 +58,4 @@ New windows default **unfocused**; first `add` focuses that window.
 
 Use `term.setAutoPrompt(false)` before repeated `gfx.render()`.
 
-**`input.cancelKeyEvent(e)`** — forwards to mod `cancelEvent(e)` / `consumeEvent` / `cancelKeyEvent` / `discardKeyEvent`. DovOS uses it for stray typing when no text field is focused.
+**`input.cancelKeyEvent(e)`** — forwards to mod `cancelEvent(e)` / `consumeEvent` / `cancelKeyEvent` / `discardKeyEvent`. AtlasOS uses it for stray typing when no text field is focused.

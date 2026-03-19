@@ -1,15 +1,15 @@
 --[[
   Start menu + taskbar. App metadata loads from appinfo.json only:
-    /home/dovos/apps/<folder>/appinfo.json  (system, defined load order)
-    + any extra folders under /home/dovos/apps
+    /home/AtlasOS/apps/<folder>/appinfo.json  (system, defined load order)
+    + any extra folders under /home/AtlasOS/apps
     /home/apps/<folder>/appinfo.json       (user; cannot override system ids)
 
   Left (fixed):  files, console, status  |  Right: settings, trash
-  Persist: /etc/dovos/start_menu.txt
+  Persist: /etc/AtlasOS/start_menu.txt
 ]]
 
-local PATH = "/etc/dovos/start_menu.txt"
-local DOVOS_APPS = "/home/dovos/apps"
+local PATH = "/etc/AtlasOS/start_menu.txt"
+local AtlasOS_APPS = "/home/AtlasOS/apps"
 --- Folders to load first (order); id comes from each appinfo.json.
 local SYSTEM_FOLDER_ORDER = {
   "welcome",
@@ -25,11 +25,11 @@ local SYSTEM_FOLDER_ORDER = {
 local startmenu = {}
 
 startmenu.registry = {}
-startmenu._dovos_search = nil
---- Ids registered from /home/dovos/apps (user /home/apps may not replace these)
+startmenu._AtlasOS_search = nil
+--- Ids registered from /home/AtlasOS/apps (user /home/apps may not replace these)
 startmenu._system_ids = {}
 --- folder name in SYSTEM_FOLDER_ORDER -> app id (e.g. search -> taskbar_search)
-startmenu._dovos_folder_id = {}
+startmenu._AtlasOS_folder_id = {}
 
 local TB_SLOT_W, TB_STEP = 6, 7
 
@@ -83,8 +83,8 @@ local WINDOW_FOR_SLOT = {
 }
 
 local function register_from_app(app)
-  if app.dovos and app.dovos.role == "search_engine" and type(app.dovos.search_engine) == "string" then
-    startmenu._dovos_search = { package_dir = app.package_dir, module = app.dovos.search_engine }
+  if app.AtlasOS and app.AtlasOS.role == "search_engine" and type(app.AtlasOS.search_engine) == "string" then
+    startmenu._AtlasOS_search = { package_dir = app.package_dir, module = app.AtlasOS.search_engine }
   end
   startmenu.registry[app.id] = {
     label = app.name,
@@ -99,7 +99,7 @@ local function register_from_app(app)
     entry = app.entry,
     args = app.args or {},
     package_dir = app.package_dir,
-    paint_module = app.dovos and app.dovos.paint_module,
+    paint_module = app.AtlasOS and app.AtlasOS.paint_module,
   }
 end
 
@@ -111,7 +111,7 @@ local function ensure_taskbar_slot(id)
     label = w,
     icon = "?",
     window = w,
-    description = "Install " .. DOVOS_APPS .. "/" .. id .. "/appinfo.json",
+    description = "Install " .. AtlasOS_APPS .. "/" .. id .. "/appinfo.json",
     entry = nil,
     args = {},
     package_dir = "",
@@ -123,12 +123,12 @@ function startmenu.refresh_packages()
   for k in pairs(startmenu.registry) do
     startmenu.registry[k] = nil
   end
-  startmenu._dovos_search = nil
+  startmenu._AtlasOS_search = nil
   for k in pairs(startmenu._system_ids) do
     startmenu._system_ids[k] = nil
   end
-  for k in pairs(startmenu._dovos_folder_id) do
-    startmenu._dovos_folder_id[k] = nil
+  for k in pairs(startmenu._AtlasOS_folder_id) do
+    startmenu._AtlasOS_folder_id[k] = nil
   end
 
   local ok, appinfo = pcall(dofile, "/home/lib/appinfo.lua")
@@ -139,17 +139,17 @@ function startmenu.refresh_packages()
   local seen_id = {}
 
   for _, folder in ipairs(SYSTEM_FOLDER_ORDER) do
-    local dir = DOVOS_APPS .. "/" .. folder
+    local dir = AtlasOS_APPS .. "/" .. folder
     local app = appinfo.load_package(dir)
     if app then
       register_from_app(app)
       seen_id[app.id] = true
       startmenu._system_ids[app.id] = true
-      startmenu._dovos_folder_id[folder] = app.id
+      startmenu._AtlasOS_folder_id[folder] = app.id
     end
   end
 
-  for _, app in ipairs(appinfo.scan(DOVOS_APPS)) do
+  for _, app in ipairs(appinfo.scan(AtlasOS_APPS)) do
     if not seen_id[app.id] then
       register_from_app(app)
       seen_id[app.id] = true
@@ -174,7 +174,7 @@ function startmenu.refresh_packages()
         label = title,
         icon = "?",
         window = title,
-        description = "Add package: " .. DOVOS_APPS .. "/" .. id,
+        description = "Add package: " .. AtlasOS_APPS .. "/" .. id,
         entry = nil,
         args = {},
         package_dir = "",
@@ -184,8 +184,8 @@ function startmenu.refresh_packages()
   end
 
   for _, app in ipairs(appinfo.scan("/home/apps")) do
-    if app.dovos and app.dovos.role == "search_engine" and type(app.dovos.search_engine) == "string" then
-      startmenu._dovos_search = { package_dir = app.package_dir, module = app.dovos.search_engine }
+    if app.AtlasOS and app.AtlasOS.role == "search_engine" and type(app.AtlasOS.search_engine) == "string" then
+      startmenu._AtlasOS_search = { package_dir = app.package_dir, module = app.AtlasOS.search_engine }
     end
     if not startmenu._system_ids[app.id] then
       register_from_app(app)
@@ -232,7 +232,7 @@ function startmenu.default_groups()
     end
   end
   for _, folder in ipairs(SYSTEM_FOLDER_ORDER) do
-    local id = startmenu._dovos_folder_id[folder] or folder
+    local id = startmenu._AtlasOS_folder_id[folder] or folder
     try_add(id)
   end
   local extra = {}
@@ -273,7 +273,7 @@ end
 
 function startmenu.save(groups)
   scrub_groups(groups)
-  fs.makeDir("/etc/dovos")
+  fs.makeDir("/etc/AtlasOS")
   local lines = { "v1" }
   for _, g in ipairs(groups) do
     lines[#lines + 1] = "group " .. g.name
@@ -391,9 +391,9 @@ function startmenu.run_package(id)
   for j = 1, #(m.args or {}) do
     argv[j] = tostring(m.args[j])
   end
-  _G.DovOS_APP = { id = id, package_dir = m.package_dir, args = argv }
+  _G.AtlasOS_APP = { id = id, package_dir = m.package_dir, args = argv }
   local ok, err = pcall(dofile, path)
-  _G.DovOS_APP = nil
+  _G.AtlasOS_APP = nil
   if not ok then
     return false, tostring(err)
   end

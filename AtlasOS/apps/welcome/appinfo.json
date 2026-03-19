@@ -1,0 +1,12 @@
+{
+  "id": "welcome",
+  "name": "Guide",
+  "window": "Guide",
+  "description": "System info and user guide (README)",
+  "developer": "AtlasOS",
+  "icon": ["╭──╮", "│i│", "╰──╯"],
+  "icon_row_fg": ["bright_cyan", "cyan", "bright_blue"],
+  "icon_taskbar_sel_fg": "black",
+  "entry": "main.lua",
+  "version": "1.1"
+}
