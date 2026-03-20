@@ -169,6 +169,16 @@ function input.waitFor(timeoutMs)
   return nil
 end
 
+--- Yield a small amount of time to the host scheduler.
+function input.idle(ms)
+  ms = math.max(0, math.floor(tonumber(ms) or 0))
+  if util and type(util.sleep) == "function" then
+    pcall(util.sleep, ms)
+    return true
+  end
+  return false
+end
+
 function input.pending()
   local fn = mod_method("pending")
   if fn then return fn() end

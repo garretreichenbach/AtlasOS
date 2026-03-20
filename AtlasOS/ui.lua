@@ -1321,10 +1321,7 @@ function UI.run_loop()
 		UI.redraw()
 		while true do
 			local events = input.poll_all()
-			if #events == 0 then
-				local one = input.waitFor(16)
-				if one then events = { one } end
-			end
+			if #events == 0 then input.idle(8) end
 			for _, ev in ipairs(events) do
 				if not ev then
 				elseif ev.type == "key" and key_expects_text_target(ev) and not UI.input_text_active() then

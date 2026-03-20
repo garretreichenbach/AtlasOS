@@ -77,7 +77,7 @@ local CORE_PATHS = {
 }
 
 local BUNDLE_FILE_COUNT = 48
-local BUNDLE_TOTAL_BYTES = 200683
+local BUNDLE_TOTAL_BYTES = 200818
 local BUNDLE = {
 	{
 		path = [[/home/AtlasOS/APPINFO.md]],
@@ -2179,10 +2179,7 @@ input.consumeKeyboard()
 local out = nil
 while not out do
 	local events = input.poll_all()
-	if #events == 0 then
-		local one = input.waitFor(32)
-		if one then events = { one } end
-	end
+	if #events == 0 then input.idle(16) end
 
 	local t = now_ms()
 	state.blink_t = t
@@ -3854,10 +3851,7 @@ function UI.run_loop()
 		UI.redraw()
 		while true do
 			local events = input.poll_all()
-			if #events == 0 then
-				local one = input.waitFor(16)
-				if one then events = { one } end
-			end
+			if #events == 0 then input.idle(8) end
 			for _, ev in ipairs(events) do
 				if not ev then
 				elseif ev.type == "key" and key_expects_text_target(ev) and not UI.input_text_active() then
@@ -5827,6 +5821,16 @@ function input.waitFor(timeoutMs)
   local fn = mod_method("waitFor")
   if fn then return fn(timeoutMs) end
   return nil
+end
+
+--- Yield a small amount of time to the host scheduler.
+function input.idle(ms)
+  ms = math.max(0, math.floor(tonumber(ms) or 0))
+  if util and type(util.sleep) == "function" then
+    pcall(util.sleep, ms)
+    return true
+  end
+  return false
 end
 
 function input.pending()

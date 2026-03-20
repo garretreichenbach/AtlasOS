@@ -280,10 +280,7 @@ input.consumeKeyboard()
 local out = nil
 while not out do
 	local events = input.poll_all()
-	if #events == 0 then
-		local one = input.waitFor(32)
-		if one then events = { one } end
-	end
+	if #events == 0 then input.idle(16) end
 
 	local t = now_ms()
 	state.blink_t = t
