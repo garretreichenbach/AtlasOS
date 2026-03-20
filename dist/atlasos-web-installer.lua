@@ -8,19 +8,60 @@ local MARKER = "ATLASOS_WEB_INSTALLER_V1"
 local STARTUP_PATH = "/etc/startup.lua"
 local STARTUP_BACKUP = "/etc/startup.lua.atlasos_backup"
 local NORMAL_STARTUP = [[-- AtlasOS auto-start (LuaMade runs this at boot; see Logiscript "Startup behavior")
-local function atlas_run(path)
-  if type(dofile) == "function" then
-	return dofile(path)
+local function atlas_bootstrap_loader()
+  local orig_loadfile = rawget(_G, "loadfile")
+  local orig_dofile = rawget(_G, "dofile")
+
+  local function atlas_loadfile(path)
+	path = tostring(path or "")
+	if type(orig_loadfile) == "function" then
+	  local ok, chunk, err = pcall(orig_loadfile, path)
+	  if ok and (type(chunk) == "function" or chunk == nil) then
+		return chunk, err
+	  end
+	end
+	if fs and type(fs.read) == "function" and type(load) == "function" then
+	  local ok, raw = pcall(fs.read, path)
+	  if not ok or raw == nil then
+		return nil, "could not read " .. tostring(path)
+	  end
+	  return load(raw, "@" .. path)
+	end
+	return nil, "no script loader available (loadfile/fs.read+load missing)"
   end
-  if type(loadfile) == "function" then
-	local chunk, err = loadfile(path)
-	if not chunk then error(err) end
+
+  local function atlas_dofile(path)
+	local chunk, err = atlas_loadfile(path)
+	if not chunk then
+	  if type(orig_dofile) == "function" then
+		return orig_dofile(path)
+	  end
+	  error(err)
+	end
 	return chunk()
   end
-  error("AtlasOS startup: no script loader available (dofile/loadfile missing)")
+
+  _G.loadfile = atlas_loadfile
+  _G.dofile = atlas_dofile
+  _G.__AtlasLoad = atlas_dofile
+  return atlas_dofile
 end
 
-atlas_run("/home/AtlasOS/installer_gate.lua")
+atlas_bootstrap_loader()
+
+local function atlas_format_error(err)
+  if debug and type(debug.traceback) == "function" then
+  return debug.traceback(tostring(err), 2)
+  end
+  return tostring(err)
+end
+
+local ok, err = xpcall(function()
+  return _G.__AtlasLoad("/home/AtlasOS/installer_gate.lua")
+end, atlas_format_error)
+if not ok then
+  print("AtlasOS startup failed: " .. tostring(err))
+end
 ]]
 local CORE_PATHS = {
 	[[/home/AtlasOS/installer_gate.lua]],
@@ -36,7 +77,7 @@ local CORE_PATHS = {
 }
 
 local BUNDLE_FILE_COUNT = 48
-local BUNDLE_TOTAL_BYTES = 197452
+local BUNDLE_TOTAL_BYTES = 198754
 local BUNDLE = {
 	{
 		path = [[/home/AtlasOS/APPINFO.md]],
@@ -1186,10 +1227,8 @@ export = {
     local box = "[" .. qdisp .. string.rep(" ", math.max(0, sw - 2 - #qdisp)) .. "]"
     if #box > sw then box = box:sub(1, sw) end
     local search_h = (th >= 3) and 2 or 1
-    ag.setColor("black", "white")
-    ag.fillRect(x, y0, sw, search_h, " ")
-    ag.text(x, y0, box:sub(1, sw))
-    ag.setColor(fg, tb)
+    ag.fillRect(x, y0, sw, search_h, "white")
+    ag.text(x, y0, box:sub(1, sw), "black", "white")
     if search_h >= 2 then
       local sub = ""
       if state.needle ~= "" then
@@ -1199,13 +1238,11 @@ export = {
         sub = "search / find"
       end
       if #sub > sw then sub = sub:sub(1, sw - 1) .. "…" end
-      ag.setColor(accent, tb)
-      ag.text(x, y0 + 1, sub)
+      ag.text(x, y0 + 1, sub, accent, tb)
     elseif th == 2 and state.needle ~= "" then
       local tail = " " .. #state.name_hits .. "n/" .. #state.content_hits .. "f"
       if #box + #tail <= sw then
-        ag.setColor("black", "white")
-        ag.text(x + #box, y0, tail)
+        ag.text(x + #box, y0, tail, "black", "white")
       end
     end
   end,
@@ -1716,7 +1753,59 @@ local function check_paths()
 end
 
 local STARTUP_BODY = [[-- AtlasOS auto-start (LuaMade runs this at boot; see Logiscript "Startup behavior")
-dofile("/home/AtlasOS/installer_gate.lua")
+local function atlas_bootstrap_loader()
+	local orig_loadfile = rawget(_G, "loadfile")
+	local orig_dofile = rawget(_G, "dofile")
+
+	local function atlas_loadfile(path)
+		path = tostring(path or "")
+		if type(orig_loadfile) == "function" then
+			local ok, chunk, err = pcall(orig_loadfile, path)
+			if ok and (type(chunk) == "function" or chunk == nil) then
+				return chunk, err
+			end
+		end
+		if fs and type(fs.read) == "function" and type(load) == "function" then
+			local ok, raw = pcall(fs.read, path)
+			if not ok or raw == nil then
+				return nil, "could not read " .. tostring(path)
+			end
+			return load(raw, "@" .. path)
+		end
+		return nil, "no script loader available (loadfile/fs.read+load missing)"
+	end
+
+	local function atlas_dofile(path)
+		local chunk, err = atlas_loadfile(path)
+		if not chunk then
+			if type(orig_dofile) == "function" then
+				return orig_dofile(path)
+			end
+			error(err)
+		end
+		return chunk()
+	end
+
+	_G.loadfile = atlas_loadfile
+	_G.dofile = atlas_dofile
+	_G.__AtlasLoad = atlas_dofile
+	return atlas_dofile
+end
+
+atlas_bootstrap_loader()
+local function atlas_format_error(err)
+	if debug and type(debug.traceback) == "function" then
+		return debug.traceback(tostring(err), 2)
+	end
+	return tostring(err)
+end
+
+local ok, err = xpcall(function()
+	return _G.__AtlasLoad("/home/AtlasOS/installer_gate.lua")
+end, atlas_format_error)
+if not ok then
+	print("AtlasOS startup failed: " .. tostring(err))
+end
 ]]
 
 local function install()
@@ -2633,9 +2722,8 @@ local function search_offline_api()
 			return { needle = "", needle_display = "", name_hits = {}, content_hits = {}, busy = false }
 		end,
 		draw_taskbar = function(ag, opt)
-			ag.setColor("black", "white")
-			ag.fillRect(opt.x, opt.y0, opt.sw, math.max(1, opt.th >= 3 and 2 or 1), " ")
-			ag.text(opt.x, opt.y0, "[search missing]")
+			ag.fillRect(opt.x, opt.y0, opt.sw, math.max(1, opt.th >= 3 and 2 or 1), "white")
+			ag.text(opt.x, opt.y0, "[search missing]", "black", "white")
 		end,
 	}
 end
@@ -6694,6 +6782,47 @@ return window
 	},
 }
 
+local function atlas_bootstrap_loader()
+  local orig_loadfile = rawget(_G, "loadfile")
+  local orig_dofile = rawget(_G, "dofile")
+
+  local function atlas_loadfile(path)
+	path = tostring(path or "")
+	if type(orig_loadfile) == "function" then
+	  local ok, chunk, err = pcall(orig_loadfile, path)
+	  if ok and (type(chunk) == "function" or chunk == nil) then
+		return chunk, err
+	  end
+	end
+	if fs and type(fs.read) == "function" and type(load) == "function" then
+	  local ok, raw = pcall(fs.read, path)
+	  if not ok or raw == nil then
+		return nil, "could not read " .. tostring(path)
+	  end
+	  return load(raw, "@" .. path)
+	end
+	return nil, "no script loader available (loadfile/fs.read+load missing)"
+  end
+
+  local function atlas_dofile(path)
+	local chunk, err = atlas_loadfile(path)
+	if not chunk then
+	  if type(orig_dofile) == "function" then
+		return orig_dofile(path)
+	  end
+	  error(err)
+	end
+	return chunk()
+  end
+
+  _G.loadfile = atlas_loadfile
+  _G.dofile = atlas_dofile
+  _G.__AtlasLoad = atlas_dofile
+  return atlas_dofile
+end
+
+atlas_bootstrap_loader()
+
 local function normalize(path)
 	path = tostring(path or "")
 	path = path:gsub("\\", "/")
@@ -6743,17 +6872,17 @@ local function verify_core_paths()
 end
 
 local function run_script(path)
-	if type(dofile) == "function" then
-		return dofile(path)
+	if type(_G.__AtlasLoad) == "function" then
+		return _G.__AtlasLoad(path)
 	end
-	if type(loadfile) == "function" then
-		local chunk, err = loadfile(path)
-		if not chunk then
-			error("could not load " .. tostring(path) .. ": " .. tostring(err))
-		end
-		return chunk()
+	error("no script loader available (__AtlasLoad missing)")
+end
+
+local function format_error(err)
+	if debug and type(debug.traceback) == "function" then
+		return debug.traceback(tostring(err), 2)
 	end
-	error("no script loader available (dofile/loadfile missing)")
+	return tostring(err)
 end
 
 local function looks_like_atlas_startup(body)
@@ -6830,7 +6959,7 @@ local function main()
 	run_script("/home/AtlasOS/installer_gate.lua")
 end
 
-local ok, err = pcall(main)
+local ok, err = xpcall(main, format_error)
 if not ok then
 	print("AtlasOS web install failed: " .. tostring(err))
 end

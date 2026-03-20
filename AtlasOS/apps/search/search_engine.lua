@@ -117,10 +117,8 @@ export = {
     local box = "[" .. qdisp .. string.rep(" ", math.max(0, sw - 2 - #qdisp)) .. "]"
     if #box > sw then box = box:sub(1, sw) end
     local search_h = (th >= 3) and 2 or 1
-    ag.setColor("black", "white")
-    ag.fillRect(x, y0, sw, search_h, " ")
-    ag.text(x, y0, box:sub(1, sw))
-    ag.setColor(fg, tb)
+    ag.fillRect(x, y0, sw, search_h, "white")
+    ag.text(x, y0, box:sub(1, sw), "black", "white")
     if search_h >= 2 then
       local sub = ""
       if state.needle ~= "" then
@@ -130,13 +128,11 @@ export = {
         sub = "search / find"
       end
       if #sub > sw then sub = sub:sub(1, sw - 1) .. "…" end
-      ag.setColor(accent, tb)
-      ag.text(x, y0 + 1, sub)
+      ag.text(x, y0 + 1, sub, accent, tb)
     elseif th == 2 and state.needle ~= "" then
       local tail = " " .. #state.name_hits .. "n/" .. #state.content_hits .. "f"
       if #box + #tail <= sw then
-        ag.setColor("black", "white")
-        ag.text(x + #box, y0, tail)
+        ag.text(x + #box, y0, tail, "black", "white")
       end
     end
   end,

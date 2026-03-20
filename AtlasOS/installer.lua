@@ -35,7 +35,59 @@ local function check_paths()
 end
 
 local STARTUP_BODY = [[-- AtlasOS auto-start (LuaMade runs this at boot; see Logiscript "Startup behavior")
-dofile("/home/AtlasOS/installer_gate.lua")
+local function atlas_bootstrap_loader()
+	local orig_loadfile = rawget(_G, "loadfile")
+	local orig_dofile = rawget(_G, "dofile")
+
+	local function atlas_loadfile(path)
+		path = tostring(path or "")
+		if type(orig_loadfile) == "function" then
+			local ok, chunk, err = pcall(orig_loadfile, path)
+			if ok and (type(chunk) == "function" or chunk == nil) then
+				return chunk, err
+			end
+		end
+		if fs and type(fs.read) == "function" and type(load) == "function" then
+			local ok, raw = pcall(fs.read, path)
+			if not ok or raw == nil then
+				return nil, "could not read " .. tostring(path)
+			end
+			return load(raw, "@" .. path)
+		end
+		return nil, "no script loader available (loadfile/fs.read+load missing)"
+	end
+
+	local function atlas_dofile(path)
+		local chunk, err = atlas_loadfile(path)
+		if not chunk then
+			if type(orig_dofile) == "function" then
+				return orig_dofile(path)
+			end
+			error(err)
+		end
+		return chunk()
+	end
+
+	_G.loadfile = atlas_loadfile
+	_G.dofile = atlas_dofile
+	_G.__AtlasLoad = atlas_dofile
+	return atlas_dofile
+end
+
+atlas_bootstrap_loader()
+local function atlas_format_error(err)
+	if debug and type(debug.traceback) == "function" then
+		return debug.traceback(tostring(err), 2)
+	end
+	return tostring(err)
+end
+
+local ok, err = xpcall(function()
+	return _G.__AtlasLoad("/home/AtlasOS/installer_gate.lua")
+end, atlas_format_error)
+if not ok then
+	print("AtlasOS startup failed: " .. tostring(err))
+end
 ]]
 
 local function install()

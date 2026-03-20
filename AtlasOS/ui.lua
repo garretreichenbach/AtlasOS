@@ -189,9 +189,8 @@ local function search_offline_api()
 			return { needle = "", needle_display = "", name_hits = {}, content_hits = {}, busy = false }
 		end,
 		draw_taskbar = function(ag, opt)
-			ag.setColor("black", "white")
-			ag.fillRect(opt.x, opt.y0, opt.sw, math.max(1, opt.th >= 3 and 2 or 1), " ")
-			ag.text(opt.x, opt.y0, "[search missing]")
+			ag.fillRect(opt.x, opt.y0, opt.sw, math.max(1, opt.th >= 3 and 2 or 1), "white")
+			ag.text(opt.x, opt.y0, "[search missing]", "black", "white")
 		end,
 	}
 end
