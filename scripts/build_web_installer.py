@@ -92,7 +92,7 @@ def render_installer(bundle_files: list[BundleFile]) -> str:
         """
 local function normalize(path)
 	path = tostring(path or "")
-	path = path:gsub("\\", "/")
+	path = path:gsub("\\\\", "/")
 	path = path:gsub("/+", "/")
 	if path == "" then return "/" end
 	if #path > 1 and path:sub(-1) == "/" then path = path:sub(1, -2) end
