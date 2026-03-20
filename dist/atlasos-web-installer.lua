@@ -77,7 +77,7 @@ local CORE_PATHS = {
 }
 
 local BUNDLE_FILE_COUNT = 48
-local BUNDLE_TOTAL_BYTES = 198754
+local BUNDLE_TOTAL_BYTES = 200607
 local BUNDLE = {
 	{
 		path = [[/home/AtlasOS/APPINFO.md]],
@@ -2174,7 +2174,7 @@ end
 
 sync_canvas()
 
-input.setEnabled(true)
+input.consumeKeyboard()
 
 local out = nil
 while not out do
@@ -2229,7 +2229,7 @@ while not out do
 	redraw()
 end
 
-input.setEnabled(true)
+input.releaseKeyboard()
 
 if out == "boot" then
 	dofile("/home/AtlasOS/boot_desktop.lua")
@@ -3849,22 +3849,27 @@ end
 
 --- Run input loop (blocking). Polls mod input, handles key/mouse, redraws on events.
 function UI.run_loop()
-	while true do
-		local events = input.poll_all()
-		if #events == 0 then
-			local one = input.waitFor(16)
-			if one then events = { one } end
-		end
-		for _, ev in ipairs(events) do
-			if not ev then
-			elseif ev.type == "key" and key_expects_text_target(ev) and not UI.input_text_active() then
-				input.cancelKeyEvent(ev)
-			else
-				UI.handle_event(ev)
+	input.consumeKeyboard()
+	local ok, err = pcall(function()
+		while true do
+			local events = input.poll_all()
+			if #events == 0 then
+				local one = input.waitFor(16)
+				if one then events = { one } end
 			end
+			for _, ev in ipairs(events) do
+				if not ev then
+				elseif ev.type == "key" and key_expects_text_target(ev) and not UI.input_text_active() then
+					input.cancelKeyEvent(ev)
+				else
+					UI.handle_event(ev)
+				end
+			end
+			if #events > 0 then UI.redraw() end
 		end
-		if #events > 0 then UI.redraw() end
-	end
+	end)
+	input.releaseKeyboard()
+	if not ok then error(err) end
 end
 
 return UI
@@ -5659,7 +5664,8 @@ return out
   Docs: https://garretreichenbach.github.io/Logiscript/markdown/io/input.html
 
   Mod API: input.poll() -> single event or nil; input.waitFor(ms); input.clear();
-           input.setEnabled(bool); input.isEnabled(); input.pending()
+           input.consumeKeyboard(); input.releaseKeyboard(); input.pending()
+           Compatibility: input.setEnabled(bool), input.isEnabled()
            Optional: input.cancelEvent(e) — stop key from reaching terminal / game bar
            when not handling it in a text field (see AtlasOS UI.run_loop).
   Events: { type="key", key=GLFW, char, down, shift, ctrl, alt }
@@ -5671,10 +5677,22 @@ return out
 
 local mod = rawget(_G, "input")
 
+-- Some userdata-backed APIs throw on unknown member access (instead of returning nil).
+-- Probe methods via pcall so missing methods don't crash AtlasOS.
+local function mod_method(name)
+  if not mod then return nil end
+  local ok, fn = pcall(function()
+    return mod[name]
+  end)
+  if ok and type(fn) == "function" then return fn end
+  return nil
+end
+
 local input = {
   _queue = {},
   _pixel_w = nil,
   _pixel_h = nil,
+  _kbd_owned = false,
 }
 
 --- Set dialog/canvas size in pixels (for pixel_to_cell scaling). Call when known (e.g. from gfx).
@@ -5705,8 +5723,9 @@ end
 
 --- Return next event from mod or nil. If no mod, return nil.
 function input.poll()
-  if mod and type(mod.poll) == "function" then
-    return mod.poll()
+  local fn = mod_method("poll")
+  if fn then
+    return fn()
   end
   return nil
 end
@@ -5740,26 +5759,80 @@ function input.dispatch(events, handler)
 end
 
 function input.clear()
-  if mod and type(mod.clear) == "function" then mod.clear() end
+  local fn = mod_method("clear")
+  if fn then fn() end
   input._queue = {}
 end
 
 function input.setEnabled(b)
-  if mod and type(mod.setEnabled) == "function" then mod.setEnabled(b) end
+  if b then
+    return input.consumeKeyboard()
+  end
+  return input.releaseKeyboard()
 end
 
 function input.isEnabled()
-  if mod and type(mod.isEnabled) == "function" then return mod.isEnabled() end
+  local consumeKeyboard = mod_method("consumeKeyboard")
+  local releaseKeyboard = mod_method("releaseKeyboard")
+  if consumeKeyboard and releaseKeyboard then
+    return input._kbd_owned == true
+  end
+  local fn = mod_method("isEnabled")
+  if fn then return fn() end
   return true
 end
 
+--- Acquire keyboard focus for AtlasOS UI.
+function input.consumeKeyboard()
+  local consumeKeyboard = mod_method("consumeKeyboard")
+  if consumeKeyboard then
+    local ok = select(1, pcall(consumeKeyboard))
+    if ok then
+      input._kbd_owned = true
+      return true
+    end
+  end
+  local setEnabled = mod_method("setEnabled")
+  if setEnabled then
+    local ok = select(1, pcall(setEnabled, true))
+    if ok then
+      input._kbd_owned = true
+      return true
+    end
+  end
+  return false
+end
+
+--- Release keyboard focus back to terminal/game input.
+function input.releaseKeyboard()
+  local releaseKeyboard = mod_method("releaseKeyboard")
+  if releaseKeyboard then
+    local ok = select(1, pcall(releaseKeyboard))
+    if ok then
+      input._kbd_owned = false
+      return true
+    end
+  end
+  local setEnabled = mod_method("setEnabled")
+  if setEnabled then
+    local ok = select(1, pcall(setEnabled, false))
+    if ok then
+      input._kbd_owned = false
+      return true
+    end
+  end
+  return false
+end
+
 function input.waitFor(timeoutMs)
-  if mod and type(mod.waitFor) == "function" then return mod.waitFor(timeoutMs) end
+  local fn = mod_method("waitFor")
+  if fn then return fn(timeoutMs) end
   return nil
 end
 
 function input.pending()
-  if mod and type(mod.pending) == "function" then return mod.pending() end
+  local fn = mod_method("pending")
+  if fn then return fn() end
   return 0
 end
 
@@ -5767,20 +5840,24 @@ end
 --- Implement one of: input.cancelEvent(e), cancelKeyEvent(e), cancelKeyEvent().
 function input.cancelKeyEvent(e)
   if not mod then return false end
-  if type(mod.cancelEvent) == "function" then
-    pcall(mod.cancelEvent, e)
+  local cancelEvent = mod_method("cancelEvent")
+  if cancelEvent then
+    pcall(cancelEvent, e)
     return true
   end
-  if type(mod.consumeEvent) == "function" then
-    pcall(mod.consumeEvent, e)
+  local consumeEvent = mod_method("consumeEvent")
+  if consumeEvent then
+    pcall(consumeEvent, e)
     return true
   end
-  if type(mod.cancelKeyEvent) == "function" then
-    if not select(1, pcall(mod.cancelKeyEvent, e)) then pcall(mod.cancelKeyEvent) end
+  local cancelKeyEvent = mod_method("cancelKeyEvent")
+  if cancelKeyEvent then
+    if not select(1, pcall(cancelKeyEvent, e)) then pcall(cancelKeyEvent) end
     return true
   end
-  if type(mod.discardKeyEvent) == "function" then
-    pcall(mod.discardKeyEvent, e)
+  local discardKeyEvent = mod_method("discardKeyEvent")
+  if discardKeyEvent then
+    pcall(discardKeyEvent, e)
     return true
   end
   return false

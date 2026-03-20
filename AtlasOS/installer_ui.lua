@@ -275,7 +275,7 @@ end
 
 sync_canvas()
 
-input.setEnabled(true)
+input.consumeKeyboard()
 
 local out = nil
 while not out do
@@ -330,7 +330,7 @@ while not out do
 	redraw()
 end
 
-input.setEnabled(true)
+input.releaseKeyboard()
 
 if out == "boot" then
 	dofile("/home/AtlasOS/boot_desktop.lua")

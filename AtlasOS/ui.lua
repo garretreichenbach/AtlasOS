@@ -1316,22 +1316,27 @@ end
 
 --- Run input loop (blocking). Polls mod input, handles key/mouse, redraws on events.
 function UI.run_loop()
-	while true do
-		local events = input.poll_all()
-		if #events == 0 then
-			local one = input.waitFor(16)
-			if one then events = { one } end
-		end
-		for _, ev in ipairs(events) do
-			if not ev then
-			elseif ev.type == "key" and key_expects_text_target(ev) and not UI.input_text_active() then
-				input.cancelKeyEvent(ev)
-			else
-				UI.handle_event(ev)
+	input.consumeKeyboard()
+	local ok, err = pcall(function()
+		while true do
+			local events = input.poll_all()
+			if #events == 0 then
+				local one = input.waitFor(16)
+				if one then events = { one } end
 			end
+			for _, ev in ipairs(events) do
+				if not ev then
+				elseif ev.type == "key" and key_expects_text_target(ev) and not UI.input_text_active() then
+					input.cancelKeyEvent(ev)
+				else
+					UI.handle_event(ev)
+				end
+			end
+			if #events > 0 then UI.redraw() end
 		end
-		if #events > 0 then UI.redraw() end
-	end
+	end)
+	input.releaseKeyboard()
+	if not ok then error(err) end
 end
 
 return UI
