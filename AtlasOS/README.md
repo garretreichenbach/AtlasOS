@@ -17,7 +17,7 @@ python3 scripts/build_web_installer.py
 That writes **`dist/atlasos-web-installer.lua`**. Keep that generated file committed when installer sources change; the repository workflow rebuilds it and fails if it drifts from the checked-in copy. Host that file on a web server that LuaMade can reach (for example GitHub raw content or GitHub Pages if the domain is trusted by the server).
 
 - **Rolling/latest channel:** use the `main` branch `dist/atlasos-web-installer.lua` URL shown below.
-- **Version-pinned channel:** tag a release like `v1.0.0`; the release workflow rebuilds the installer and uploads the same file as a GitHub Release asset so you can host a stable versioned download URL instead of tracking `main`.
+- **Version-pinned channel:** tag a release like `v1.0.0`; the release workflow rebuilds the installer and uploads the same file as a GitHub Release asset so you can host a stable versioned download URL instead of tracking `main`. You can also run that workflow manually and provide the tag as the workflow `tag` input.
 
 For the simplest in-game install, fetch it straight into **`/etc/startup.lua`** and reboot once:
 
