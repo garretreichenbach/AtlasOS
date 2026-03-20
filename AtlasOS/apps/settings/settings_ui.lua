@@ -77,32 +77,25 @@ if not factory then
     end
 
     local cx0, cy0 = win:client_x(), win:client_y()
-    atlasgfx.setColor(win.client_fg, win.client_bg)
 
     for r = yB, ch - 1 do
-      atlasgfx.text(cx0 + DIV, cy0 + r, "│")
+      atlasgfx.text(cx0 + DIV, cy0 + r, "│", win.client_fg, win.client_bg)
     end
 
-    atlasgfx.setColor("bright_white", win.client_bg)
-    window.draw_text_line(win, 1, yB, "Settings")
-    atlasgfx.setColor(win.client_fg, win.client_bg)
+    window.draw_text_line(win, 1, yB, "Settings", "bright_white")
 
     local row = yB + 2
     for _, c in ipairs(CATS) do
       if row >= ch - 1 then break end
       local sel = (UI._settings_cat == c.id)
-      if sel then
-        atlasgfx.setColor("black", "bright_white")
-        atlasgfx.fillRect(cx0, cy0 + row, LW, 1, " ")
-      else
-        atlasgfx.setColor(win.client_fg, win.client_bg)
-      end
+      local lfg = sel and "black" or win.client_fg
+      local lbg = sel and "bright_white" or win.client_bg
+      if sel then atlasgfx.fillRect(cx0, cy0 + row, LW, 1, "bright_white") end
       local line = (sel and "│ " or "  ") .. c.label
       line = line .. string.rep(" ", math.max(0, LW - #line))
       if #line > LW then line = line:sub(1, LW) end
-      atlasgfx.text(cx0, cy0 + row, line)
+      atlasgfx.text(cx0, cy0 + row, line, lfg, lbg)
       add_zone(0, row, LW - 1, row, "cat:" .. c.id)
-      atlasgfx.setColor(win.client_fg, win.client_bg)
       row = row + 1
     end
 
@@ -113,9 +106,7 @@ if not factory then
     local dev = UI.developer_mode_enabled()
 
     local function hdr(s)
-      atlasgfx.setColor("bright_white", win.client_bg)
-      window.draw_text_line(win, R0, rr, (s or ""):sub(1, RW))
-      atlasgfx.setColor(win.client_fg, win.client_bg)
+      window.draw_text_line(win, R0, rr, (s or ""):sub(1, RW), "bright_white")
       rr = rr + 1
     end
 

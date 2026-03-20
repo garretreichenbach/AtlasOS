@@ -20,8 +20,7 @@ local function draw_text_line(win, rel_col, rel_row, text)
   local maxc = cw - rel_col
   text = tostring(text)
   if #text > maxc then text = text:sub(1, maxc) end
-  atlasgfx.setColor(win.client_fg, win.client_bg)
-  atlasgfx.text(win:client_x() + rel_col, win:client_y() + rel_row, text)
+  atlasgfx.text(win:client_x() + rel_col, win:client_y() + rel_row, text, win.client_fg, win.client_bg)
 end
 
 local function draw_text_lines(win, lines, start_line, y0)
@@ -32,13 +31,12 @@ local function draw_text_lines(win, lines, start_line, y0)
   if ch < 1 or cw < 1 then return end
   local max_rows = ch - y0
   if max_rows < 1 then return end
-  atlasgfx.setColor(win.client_fg, win.client_bg)
   for row = 0, max_rows - 1 do
     local line = lines[start_line + row]
     if line then
       line = tostring(line)
       if #line > cw then line = line:sub(1, cw) end
-      atlasgfx.text(win:client_x(), win:client_y() + y0 + row, line)
+      atlasgfx.text(win:client_x(), win:client_y() + y0 + row, line, win.client_fg, win.client_bg)
     end
   end
 end
@@ -65,9 +63,8 @@ function widgets.button(win, col, row, width, label, fg, bg)
   local inner = width - 2
   if #label > inner then label = label:sub(1, inner) end
   local s = "[" .. label .. string.rep(" ", inner - #label) .. "]"
-  atlasgfx.setColor(fg, bg)
-  atlasgfx.fillRect(cx + col, cy + row, width, 1, " ")
-  atlasgfx.text(cx + col, cy + row, s)
+  atlasgfx.fillRect(cx + col, cy + row, width, 1, bg)
+  atlasgfx.text(cx + col, cy + row, s, fg, bg)
 end
 
 function widgets.hrule(win, row, ch)
@@ -76,8 +73,7 @@ function widgets.hrule(win, row, ch)
   if cw < 1 then return end
   row = math.floor(row)
   if row < 0 or row >= win:client_h() then return end
-  atlasgfx.setColor(win.client_fg, win.client_bg)
-  atlasgfx.text(win:client_x(), win:client_y() + row, string.rep(ch, cw))
+  atlasgfx.text(win:client_x(), win:client_y() + row, string.rep(ch, cw), win.client_fg, win.client_bg)
 end
 
 function widgets.label_block(win, col, row, text_lines)

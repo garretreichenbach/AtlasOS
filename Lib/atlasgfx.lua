@@ -2,10 +2,14 @@
   Cell-grid UI drawing for LuaMade bitmap gfx (pixel coords + rgba rects).
   https://garretreichenbach.github.io/Logiscript/markdown/graphics/gfx.html
 
-  Current API: gfx.rect, gfx.point, gfx.line, gfx.setCanvasSize, gfx.getWidth/getHeight,
-  gfx.clear, gfx.setLayer, gfx.createLayer, gfx.clearLayer.
-  Legacy text-cell methods (fillRect, text, setColor, render, setAnsiEnabled, setSize)
-  have been removed from the API; those paths in this module are no-ops.
+  Current API (drawing): gfx.rect(x,y,w,h,r,g,b,a,filled), gfx.point, gfx.line
+  Canvas: gfx.setCanvasSize, gfx.getWidth/getHeight
+  Layers: gfx.clear, gfx.setLayer, gfx.createLayer, gfx.clearLayer
+
+  All draw calls pass color directly — there is no global color state.
+  atlasgfx.fillRect(x,y,w,h,bg_color)       filled rect in bg_color
+  atlasgfx.rect(x,y,w,h,fg_color)           outline rect in fg_color
+  atlasgfx.text(x,y,str,fg_color,bg_color)  pixel-font text
 ]]
 
 if _G.__AtlasGFX then
@@ -19,8 +23,6 @@ local atlasgfx = {
   cell_w = 8,
   cell_h = 14,
   layer = "atlas",
-  fg = { 1, 1, 1, 1 },
-  bg = { 0, 0, 0, 1 },
 }
 
 local function probe_bitmap_gfx()
@@ -139,65 +141,34 @@ function atlasgfx.begin_frame()
   end
 end
 
-function atlasgfx.end_frame()
-  -- gfx.render removed in current API; rendering is automatic.
-end
-
-function atlasgfx.cell_to_pixel(cx, cy)
-  return (math.floor(cx or 1) - 1) * atlasgfx.cell_w, (math.floor(cy or 1) - 1) * atlasgfx.cell_h
-end
-
---- Mouse / uiX uiY (canvas pixels, origin top-left) → 1-based cell index.
-function atlasgfx.pixel_to_cell_rel(px, py)
-  local cx = math.floor((tonumber(px) or 0) / atlasgfx.cell_w) + 1
-  local cy = math.floor((tonumber(py) or 0) / atlasgfx.cell_h) + 1
-  return cx, cy
-end
-
-function atlasgfx.setColor(fg, bg)
-  if not atlasgfx._bitmap then
-    -- gfx.setColor removed in current API; no-op.
-    return
-  end
-  atlasgfx.fg = color_to_rgba(fg, atlasgfx.fg)
-  atlasgfx.bg = color_to_rgba(bg, atlasgfx.bg)
-end
-
-function atlasgfx.fillRect(x, y, w, h, _)
-  if not atlasgfx._bitmap then
-    -- gfx.fillRect removed in current API; no-op.
-    return
-  end
+function atlasgfx.fillRect(x, y, w, h, bg_color)
+  if not atlasgfx._bitmap then return end
   x, y, w, h = math.floor(x or 1), math.floor(y or 1), math.floor(w or 1), math.floor(h or 1)
   if w < 1 or h < 1 then return end
   local px, py = atlasgfx.cell_to_pixel(x, y)
   local pw, ph = w * atlasgfx.cell_w, h * atlasgfx.cell_h
-  local r, g, b, a = atlasgfx.bg[1], atlasgfx.bg[2], atlasgfx.bg[3], atlasgfx.bg[4]
-  pcall(gfx.rect, px, py, pw, ph, r, g, b, a, true)
+  local c = color_to_rgba(bg_color, { 0, 0, 0, 1 })
+  pcall(gfx.rect, px, py, pw, ph, c[1], c[2], c[3], c[4], true)
 end
 
-function atlasgfx.rect(x, y, w, h, _)
-  if not atlasgfx._bitmap then
-    -- Legacy text-cell path; no-op in current API.
-    return
-  end
+function atlasgfx.rect(x, y, w, h, fg_color)
+  if not atlasgfx._bitmap then return end
   x, y, w, h = math.floor(x or 1), math.floor(y or 1), math.floor(w or 1), math.floor(h or 1)
   if w < 2 or h < 2 then return end
   local px, py = atlasgfx.cell_to_pixel(x, y)
   local pw, ph = w * atlasgfx.cell_w, h * atlasgfx.cell_h
-  local r, g, b, a = atlasgfx.fg[1], atlasgfx.fg[2], atlasgfx.fg[3], atlasgfx.fg[4]
-  pcall(gfx.rect, px, py, pw, ph, r, g, b, a, false)
+  local c = color_to_rgba(fg_color, { 1, 1, 1, 1 })
+  pcall(gfx.rect, px, py, pw, ph, c[1], c[2], c[3], c[4], false)
 end
 
-function atlasgfx.text(x, y, str)
-  if not atlasgfx._bitmap then
-    -- gfx.text removed in current API; no-op.
-    return
-  end
+function atlasgfx.text(x, y, str, fg_color, bg_color)
+  if not atlasgfx._bitmap then return end
   str = tostring(str or "")
   x, y = math.floor(x or 1), math.floor(y or 1)
-  local rf, gf, bf, af = atlasgfx.fg[1], atlasgfx.fg[2], atlasgfx.fg[3], atlasgfx.fg[4]
-  local br, bgc, bb, ba = atlasgfx.bg[1], atlasgfx.bg[2], atlasgfx.bg[3], atlasgfx.bg[4]
+  local cf = color_to_rgba(fg_color, { 1, 1, 1, 1 })
+  local cb = color_to_rgba(bg_color, { 0, 0, 0, 1 })
+  local rf, gf, bf, af = cf[1], cf[2], cf[3], cf[4]
+  local br, bgc, bb, ba = cb[1], cb[2], cb[3], cb[4]
   local scale = math.min(atlasgfx.cell_w / 8, atlasgfx.cell_h / 8)
   scale = math.max(1, math.floor(scale))
   for i = 1, #str do
@@ -222,14 +193,17 @@ function atlasgfx.text(x, y, str)
   end
 end
 
-function atlasgfx.setAnsiEnabled(on)
-  -- gfx.setAnsiEnabled removed in current API; no-op.
+function atlasgfx.cell_to_pixel(cx, cy)
+  return (math.floor(cx or 1) - 1) * atlasgfx.cell_w, (math.floor(cy or 1) - 1) * atlasgfx.cell_h
 end
 
---- No-op on bitmap gfx (per-cell scaling removed in new API).
-function atlasgfx.rect_pixel_scale() end
+--- Mouse / uiX uiY (canvas pixels, origin top-left) → 1-based cell index.
+function atlasgfx.pixel_to_cell_rel(px, py)
+  local cx = math.floor((tonumber(px) or 0) / atlasgfx.cell_w) + 1
+  local cy = math.floor((tonumber(py) or 0) / atlasgfx.cell_h) + 1
+  return cx, cy
+end
 
-function atlasgfx.rect_pixel_scale_reset() end
 
 _G.__AtlasGFX = atlasgfx
 return atlasgfx

@@ -370,7 +370,6 @@ if not factory then
 				win._chat_hit[#win._chat_hit + 1] = z
 			end
 
-			atlasgfx.setColor(win.client_fg, win.client_bg)
 			local cx0, cy0 = win:client_x(), win:client_y()
 
 			-- column headers (rows cr, cr+1)
@@ -384,13 +383,10 @@ if not factory then
 				if row > list_bottom then break end
 				local lab = srv.name:sub(1, w_srv - 1)
 				if st.sel_srv == i then
-					atlasgfx.setColor(win.client_bg, win.client_fg)
-					atlasgfx.fillRect(cx0, cy0 + row, w_srv, 1, " ")
-					atlasgfx.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)))
-					atlasgfx.setColor(win.client_fg, win.client_bg)
+					atlasgfx.fillRect(cx0, cy0 + row, w_srv, 1, win.client_fg)
+					atlasgfx.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)), win.client_bg, win.client_fg)
 				else
-					atlasgfx.setColor(win.client_fg, win.client_bg)
-					atlasgfx.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)))
+					atlasgfx.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)), win.client_fg, win.client_bg)
 				end
 				add_hit({ x0 = 0, x1 = w_srv - 1, y0 = row, y1 = row, kind = "srv", idx = i })
 			end
@@ -404,12 +400,10 @@ if not factory then
 					if row > list_bottom then break end
 					local lab = ("#" .. cn):sub(1, w_ch - 1)
 					if st.sel_ch == j then
-						atlasgfx.setColor(win.client_bg, win.client_fg)
-						atlasgfx.fillRect(cx0 + w_srv, cy0 + row, w_ch, 1, " ")
-						atlasgfx.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)))
-						atlasgfx.setColor(win.client_fg, win.client_bg)
+						atlasgfx.fillRect(cx0 + w_srv, cy0 + row, w_ch, 1, win.client_fg)
+						atlasgfx.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)), win.client_bg, win.client_fg)
 					else
-						atlasgfx.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)))
+						atlasgfx.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)), win.client_fg, win.client_bg)
 					end
 					add_hit({
 						x0 = w_srv,
@@ -432,21 +426,18 @@ if not factory then
 				if line then
 					line = tostring(line)
 					if #line > msg_w then line = line:sub(1, msg_w) end
-					atlasgfx.setColor(win.client_fg, win.client_bg)
-					atlasgfx.text(cx0 + msg_x, cy0 + row, line)
+					atlasgfx.text(cx0 + msg_x, cy0 + row, line, win.client_fg, win.client_bg)
 				end
 			end
 
 			local hint = st.status
 			if #hint > cw - 2 then hint = hint:sub(1, cw - 5) .. "…" end
-			atlasgfx.setColor("bright_black", win.client_bg)
-			atlasgfx.text(cx0, cy0 + status_row, hint .. string.rep(" ", math.max(0, cw - #hint)))
+			atlasgfx.text(cx0, cy0 + status_row, hint .. string.rep(" ", math.max(0, cw - #hint)), "bright_black", win.client_bg)
 
 			local prompt = st.prompt and ("?" .. (st.prompt.step or "") .. ") ") or ""
 			local buf = prompt .. st.compose
 			if #buf > cw - 3 then buf = "…" .. buf:sub(-(cw - 4)) end
-			atlasgfx.setColor("bright_white", win.client_bg)
-			atlasgfx.text(cx0, cy0 + input_row, "> " .. buf .. string.rep(" ", math.max(0, cw - #buf - 2)))
+			atlasgfx.text(cx0, cy0 + input_row, "> " .. buf .. string.rep(" ", math.max(0, cw - #buf - 2)), "bright_white", win.client_bg)
 
 			shell:paint_dropdown(win)
 		end

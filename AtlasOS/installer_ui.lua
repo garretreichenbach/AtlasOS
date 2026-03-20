@@ -69,74 +69,61 @@ end
 local function draw_center_text(row, msg, fg, bg)
 	msg = tostring(msg or "")
 	local pad = math.max(1, math.floor((W - #msg) / 2))
-	atlasgfx.setColor(fg, bg)
-	atlasgfx.text(pad, row, msg)
+	atlasgfx.text(pad, row, msg, fg, bg)
 end
 
 local function draw_loading()
 	atlasgfx.begin_frame()
-	atlasgfx.setColor("bright_white", "blue")
-	atlasgfx.fillRect(1, 1, W, H, " ")
+	atlasgfx.fillRect(1, 1, W, H, "blue")
 	draw_center_text(3, "AtlasOS", "bright_yellow", "blue")
 	draw_center_text(5, state.load_title ~= "" and state.load_title or "Working…", "bright_white", "blue")
 	local det = state.load_detail or ""
 	if #det > W - 4 then
 		det = det:sub(1, math.max(1, W - 7)) .. "…"
 	end
-	atlasgfx.setColor("bright_cyan", "blue")
-	atlasgfx.text(2, 6, det)
+	atlasgfx.text(2, 6, det, "bright_cyan", "blue")
 	local hint = state.load_hint or ""
 	if hint ~= "" and H >= 10 then
 		if #hint > W - 4 then
 			hint = hint:sub(1, math.max(1, W - 7)) .. "…"
 		end
-		atlasgfx.setColor("bright_black", "blue")
-		atlasgfx.text(2, 7, hint)
+		atlasgfx.text(2, 7, hint, "bright_black", "blue")
 	end
 	local bar_row = H >= 12 and 9 or 8
 	local bar_x, bar_y, bar_w = 8, bar_row, W - 16
-	atlasgfx.setColor("bright_black", "bright_white")
-	atlasgfx.fillRect(bar_x, bar_y, bar_w, 1, " ")
+	atlasgfx.fillRect(bar_x, bar_y, bar_w, 1, "bright_white")
 	local inner = math.max(0, math.floor(bar_w * state.progress))
 	if inner > 0 then
-		atlasgfx.setColor("black", "bright_green")
-		atlasgfx.fillRect(bar_x, bar_y, inner, 1, " ")
+		atlasgfx.fillRect(bar_x, bar_y, inner, 1, "bright_green")
 	end
-	atlasgfx.setColor("bright_white", "blue")
 	local pct = math.floor(state.progress * 100 + 0.5)
 	draw_center_text(bar_row + 3, tostring(pct) .. "%", "bright_cyan", "blue")
-	atlasgfx.end_frame()
 end
 
 local function draw_error()
 	atlasgfx.begin_frame()
-	atlasgfx.setColor("bright_white", "red")
-	atlasgfx.fillRect(1, 1, W, H, " ")
+	atlasgfx.fillRect(1, 1, W, H, "red")
 	draw_center_text(3, "AtlasOS — installation failed", "bright_yellow", "red")
-	atlasgfx.setColor("bright_white", "red")
 	local row = 6
 	for _, p in ipairs(state.missing) do
 		if row < H - 4 then
-			atlasgfx.text(4, row, p:sub(1, math.max(1, W - 8)))
+			atlasgfx.text(4, row, p:sub(1, math.max(1, W - 8)), "bright_white", "red")
 			row = row + 1
 		end
 	end
 	draw_center_text(H - 4, "Mount repo as /disk/AtlasOS + /disk/Lib or copy into /home/", "bright_white", "red")
 	draw_center_text(H - 2, "Press any key to exit…", "bright_yellow", "red")
-	atlasgfx.end_frame()
 end
 
 local function draw_setup()
 	atlasgfx.begin_frame()
 	local bg = state.theme == "dark" and "black" or "white"
 	local fg = state.theme == "dark" and "bright_white" or "black"
-	atlasgfx.setColor(fg, bg)
-	atlasgfx.fillRect(1, 1, W, H, " ")
+	atlasgfx.fillRect(1, 1, W, H, bg)
 	draw_center_text(2, "Welcome to AtlasOS", "bright_cyan", bg)
 	draw_center_text(4, "Choose your name and theme", fg, bg)
 
-	atlasgfx.setColor(fg, bg)
-	atlasgfx.text(4, 7, "Username" .. (state.focus == 1 and " ◄" or ""))
+	atlasgfx.text(4, 7, "Username" .. (state.focus == 1 and " ◄" or ""), fg, bg)
 	local show = state.username
 	if state.focus == 1 then
 		local blink = (math.floor(state.blink_t / 400) % 2) == 0
@@ -144,40 +131,29 @@ local function draw_setup()
 	else
 		show = show .. " "
 	end
-	atlasgfx.setColor("black", "bright_white")
-	atlasgfx.text(4, 8, show:sub(1, math.max(1, W - 10)))
+	atlasgfx.text(4, 8, show:sub(1, math.max(1, W - 10)), "black", "bright_white")
 
-	atlasgfx.setColor(fg, bg)
-	atlasgfx.text(4, 11, "Theme" .. (state.focus == 2 and " ◄" or ""))
+	atlasgfx.text(4, 11, "Theme" .. (state.focus == 2 and " ◄" or ""), fg, bg)
 	local function paint_theme_chip(col, label, which)
 		local on = (state.theme == which)
 		local sel = (state.focus == 2)
+		local cfg, cbg
 		if on then
-			atlasgfx.setColor("black", sel and "bright_cyan" or "bright_green")
+			cfg, cbg = "black", sel and "bright_cyan" or "bright_green"
 		else
-			atlasgfx.setColor(fg, sel and "bright_black" or bg)
+			cfg, cbg = fg, sel and "bright_black" or bg
 		end
-		atlasgfx.text(col, 12, "[ " .. label .. " ]")
+		atlasgfx.text(col, 12, "[ " .. label .. " ]", cfg, cbg)
 	end
 	paint_theme_chip(6, "Light", "light")
 	paint_theme_chip(24, "Dark", "dark")
 
-	if state.focus == 3 then
-		atlasgfx.setColor("black", "bright_yellow")
-	else
-		atlasgfx.setColor(fg, bg)
-	end
-	draw_center_text(
-		15,
-		"[  Continue — Enter  ]",
-		state.focus == 3 and "black" or fg,
-		state.focus == 3 and "bright_yellow" or bg
-	)
+	local cont_fg = state.focus == 3 and "black" or fg
+	local cont_bg = state.focus == 3 and "bright_yellow" or bg
+	draw_center_text(15, "[  Continue — Enter  ]", cont_fg, cont_bg)
 
 	local hint_fg = state.theme == "dark" and "bright_cyan" or "bright_black"
-	atlasgfx.setColor(hint_fg, bg)
-	atlasgfx.text(3, H - 1, "Tab next field  Enter: save on Continue  Typing: name")
-	atlasgfx.end_frame()
+	atlasgfx.text(3, H - 1, "Tab next field  Enter: save on Continue  Typing: name", hint_fg, bg)
 end
 
 local function redraw()

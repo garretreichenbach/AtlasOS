@@ -58,7 +58,6 @@ if not factory then
     end
     st.scroll = scroll
 
-    atlasgfx.setColor(win.client_fg, win.client_bg)
     local focused = win.focused
 
     for r = 0, body_h - 1 do
@@ -73,7 +72,7 @@ if not factory then
       end
       if #disp > budget then disp = disp:sub(1, budget) end
       local line = prefix .. disp
-      atlasgfx.text(win:client_x(), win:client_y() + body_start + r, line .. string.rep(" ", cw - #line))
+      atlasgfx.text(win:client_x(), win:client_y() + body_start + r, line .. string.rep(" ", cw - #line), win.client_fg, win.client_bg)
     end
 
     shell:paint_dropdown(win)

@@ -925,9 +925,7 @@ function UI.draw_taskbar()
 	local th = UI.TASKBAR_H
 	local y_icon = y0
 	local y_dock = y0 + th - 1
-	atlasgfx.setColor(fg, tb)
-	atlasgfx.fillRect(1, y0, UI.W, th, " ")
-	atlasgfx.rect_pixel_scale_reset()
+	atlasgfx.fillRect(1, y0, UI.W, th, tb)
 
 	local gconf = UI._gfx_conf or read_gfx_conf()
 
@@ -938,13 +936,11 @@ function UI.draw_taskbar()
 	local x = 2
 	local start_h = (th >= 3) and 2 or th
 	if UI.start_open then
-		atlasgfx.setColor("bright_white", 28)
-		atlasgfx.fillRect(x, y0, 4, start_h, " ")
+		atlasgfx.fillRect(x, y0, 4, start_h, 28)
 	end
-	atlasgfx.setColor(fg, tb)
-	atlasgfx.text(x + 1, y_icon, "[")
-	atlasgfx.text(x + 2, y_icon, "S")
-	atlasgfx.text(x + 3, y_icon, "]")
+	atlasgfx.text(x + 1, y_icon, "[", fg, tb)
+	atlasgfx.text(x + 2, y_icon, "S", fg, tb)
+	atlasgfx.text(x + 3, y_icon, "]", fg, tb)
 	x = 7
 
 	local sw = search_w
@@ -969,15 +965,13 @@ function UI.draw_taskbar()
 		local lines, nrows = startmenu.icon_taskbar_lines(m, th)
 		local sel = (si == UI.taskbar_sel)
 		if sel then
-			atlasgfx.setColor("bright_white", 28)
-			atlasgfx.fillRect(sx, y_icon, slot_w, nrows, " ")
+			atlasgfx.fillRect(sx, y_icon, slot_w, nrows, 28)
 		end
 		for i = 1, nrows do
 			local L = lines[i] or ""
 			local pad = math.max(0, math.floor((slot_w - #L) / 2))
 			local ifg, ibg = gfx_icon_row_style(m, i, fg, tb, sel)
-			atlasgfx.setColor(ifg, ibg)
-			atlasgfx.text(sx + pad, y_icon + i - 1, L)
+			atlasgfx.text(sx + pad, y_icon + i - 1, L, ifg, ibg)
 		end
 	end
 
@@ -999,25 +993,22 @@ function UI.draw_taskbar()
 		local gap_x = 7 + sw + 1
 		local gap_w = settings_x - gap_x - 1
 		if gap_w >= 12 then
-			atlasgfx.setColor(28, tb)
 			local status_txt = deskutil.taskbar_status_line(gap_w)
-			atlasgfx.text(gap_x + math.max(0, math.floor((gap_w - #status_txt) / 2)), y0 + 1, status_txt)
+			atlasgfx.text(gap_x + math.max(0, math.floor((gap_w - #status_txt) / 2)), y0 + 1, status_txt, 28, tb)
 		elseif gap_w >= 7 then
-			atlasgfx.setColor(28, tb)
 			local lab = "AtlasOS"
-			atlasgfx.text(gap_x + math.max(0, math.floor((gap_w - #lab) / 2)), y0 + 1, lab)
+			atlasgfx.text(gap_x + math.max(0, math.floor((gap_w - #lab) / 2)), y0 + 1, lab, 28, tb)
 		end
 	end
 
 	local dt = deskutil.dock_datetime_str()
 	local world = deskutil.dock_world_line()
-	atlasgfx.setColor(28, tb)
-	atlasgfx.text(UI.W - #dt, y_dock, dt)
+	atlasgfx.text(UI.W - #dt, y_dock, dt, 28, tb)
 	local room = UI.W - #dt - 4
 	if room >= 8 then
 		local wline = world
 		if #wline > room then wline = wline:sub(1, room - 1) .. "…" end
-		atlasgfx.text(2, y_dock, wline)
+		atlasgfx.text(2, y_dock, wline, 28, tb)
 	end
 end
 
@@ -1030,18 +1021,13 @@ function UI.draw_start_menu()
 	local px = 2
 	local panel_bg = atlastheme.load().mode == "dark" and "black" or "white"
 	local panel_fg = atlastheme.load().mode == "dark" and "white" or "black"
-	atlasgfx.setColor(panel_fg, panel_bg)
-	atlasgfx.fillRect(px, py, pw, ph, " ")
-	atlasgfx.setColor(22, panel_bg)
-	atlasgfx.rect(px, py, pw, ph, "#")
-	atlasgfx.setColor(panel_fg, panel_bg)
+	atlasgfx.fillRect(px, py, pw, ph, panel_bg)
+	atlasgfx.rect(px, py, pw, ph, 22)
 	local row = py + 1
-	atlasgfx.text(px + 1, row, " Search apps and files...")
+	atlasgfx.text(px + 1, row, " Search apps and files...", panel_fg, panel_bg)
 	row = row + 2
-	atlasgfx.setColor(22, panel_bg)
-	atlasgfx.text(px + 1, row, "── Pinned (groups) ──")
+	atlasgfx.text(px + 1, row, "── Pinned (groups) ──", 22, panel_bg)
 	row = row + 1
-	atlasgfx.setColor(panel_fg, panel_bg)
 	local groups = startmenu.load()
 	local tile_w, gap = 14, 1
 	local icon_rows = 4
@@ -1063,8 +1049,7 @@ function UI.draw_start_menu()
 	end
 	for _, g in ipairs(groups) do
 		if row >= py + ph - 8 then break end
-		atlasgfx.setColor(28, panel_bg)
-		atlasgfx.text(px + 1, row, g.name)
+		atlasgfx.text(px + 1, row, g.name, 28, panel_bg)
 		row = row + 1
 		local col = 0
 		for _, id in ipairs(g.ids) do
@@ -1072,17 +1057,14 @@ function UI.draw_start_menu()
 			if m and row + tile_h <= py + ph - 6 then
 				local tx = px + 2 + col * (tile_w + gap)
 				local iw = tile_w - 2
-				atlasgfx.setColor(22, panel_bg)
-				atlasgfx.fillRect(tx, row, tile_w, tile_h, " ")
+				atlasgfx.fillRect(tx, row, tile_w, tile_h, 22)
 				local block = tile_icon_block(m, iw, icon_rows)
 				for r = 1, icon_rows do
 					local ifg, ibg = gfx_icon_row_style(m, r, "bright_white", 22, false)
-					atlasgfx.setColor(ifg, ibg)
-					atlasgfx.text(tx + 1, row + r - 1, block[r])
+					atlasgfx.text(tx + 1, row + r - 1, block[r], ifg, ibg)
 				end
-				atlasgfx.setColor(panel_fg, panel_bg)
 				local lab = m.label:sub(1, iw)
-				atlasgfx.text(tx + 1, row + icon_rows, lab .. string.rep(" ", iw - #lab))
+				atlasgfx.text(tx + 1, row + icon_rows, lab .. string.rep(" ", iw - #lab), panel_fg, panel_bg)
 				col = col + 1
 				if col >= cols then
 					col = 0
@@ -1093,24 +1075,19 @@ function UI.draw_start_menu()
 		if col > 0 then row = row + tile_h + 1 end
 		row = row + 1
 	end
-	atlasgfx.setColor(22, panel_bg)
-	atlasgfx.text(px + 1, row, "── All apps ──")
+	atlasgfx.text(px + 1, row, "── All apps ──", 22, panel_bg)
 	row = row + 1
-	atlasgfx.setColor(panel_fg, panel_bg)
 	for _, id in ipairs(startmenu.all_app_ids()) do
 		if row >= py + ph - 3 then break end
 		local m = startmenu.registry[id]
 		local mark = (startmenu.icon_lines(m)[1] or "?"):sub(1, 8)
 		local mx = px + 2
 		local ifg, ibg = gfx_icon_row_style(m, 1, panel_fg, panel_bg, false)
-		atlasgfx.setColor(ifg, ibg)
-		atlasgfx.text(mx, row, mark)
-		atlasgfx.setColor(panel_fg, panel_bg)
-		atlasgfx.text(mx + #mark, row, "  " .. m.label .. "  (" .. id .. ")")
+		atlasgfx.text(mx, row, mark, ifg, ibg)
+		atlasgfx.text(mx + #mark, row, "  " .. m.label .. "  (" .. id .. ")", panel_fg, panel_bg)
 		row = row + 1
 	end
-	atlasgfx.setColor(28, panel_bg)
-	atlasgfx.text(px + 1, py + ph - 2, "pin user apps only  find|search <text>")
+	atlasgfx.text(px + 1, py + ph - 2, "pin user apps only  find|search <text>", 28, panel_bg)
 end
 
 function UI.draw_activities_overlay()
@@ -1118,26 +1095,23 @@ function UI.draw_activities_overlay()
 	local mx = math.max(3, math.floor(UI.W * 0.04))
 	local my = math.max(2, math.floor(UI.H * 0.06))
 	local ow, oh = UI.W - 2 * mx, UI.H - 2 * my
-	atlasgfx.setColor("white", "black")
-	atlasgfx.fillRect(mx, my, ow, oh, " ")
-	atlasgfx.setColor(22, "white")
-	atlasgfx.rect(mx, my, ow, oh, "#")
-	atlasgfx.setColor("black", "white")
+	atlasgfx.fillRect(mx, my, ow, oh, "black")
+	atlasgfx.rect(mx, my, ow, oh, 22)
 	local ix = mx + 2
 	local iy = my + 1
-	atlasgfx.text(ix, iy, " Activities")
-	atlasgfx.text(ix, iy + 2, "Search: ______ (keyboard API)")
-	atlasgfx.text(ix, iy + 4, "Windows:")
+	atlasgfx.text(ix, iy, " Activities", "black", "white")
+	atlasgfx.text(ix, iy + 2, "Search: ______", "black", "white")
+	atlasgfx.text(ix, iy + 4, "Windows:", "black", "white")
 	local row = iy + 6
 	if UI.desk and UI.desk._windows then
 		for _, w in ipairs(UI.desk._windows) do
 			if row >= my + oh - 3 then break end
 			local tag = w.minimized and " (min)" or ""
-			atlasgfx.text(ix + 2, row, "- " .. (w.title or "Window") .. tag)
+			atlasgfx.text(ix + 2, row, "- " .. (w.title or "Window") .. tag, "black", "white")
 			row = row + 1
 		end
 	end
-	atlasgfx.text(ix, my + oh - 2, "Esc when keys work")
+	atlasgfx.text(ix, my + oh - 2, "Esc when keys work", "black", "white")
 end
 
 function UI.redraw()
@@ -1149,7 +1123,6 @@ function UI.redraw()
 	if pw and ph then
 		input.set_canvas_pixels(pw, ph)
 	end
-	atlasgfx.setAnsiEnabled(true)
 	atlasgfx.begin_frame()
 	local key = UI.W .. "x" .. UI.H
 	if UI.desk and UI._canvas_key ~= key then
@@ -1172,7 +1145,6 @@ function UI.redraw()
 	UI.draw_taskbar()
 	UI.draw_start_menu()
 	UI.draw_activities_overlay()
-	atlasgfx.end_frame()
 end
 
 function UI.toggle_activities()
@@ -1262,16 +1234,14 @@ function UI.draw_minimized_strip()
 	if not has then return end
 	local t = atlastheme.load()
 	local bg = t.mode == "dark" and 235 or 252
-	atlasgfx.setColor(28, bg)
-	atlasgfx.fillRect(1, y0, UI.W, 1, " ")
-	atlasgfx.setColor("bright_white", 22)
+	atlasgfx.fillRect(1, y0, UI.W, 1, bg)
 	local x = 2
-	atlasgfx.text(1, y0, " ")
+	atlasgfx.text(1, y0, " ", 28, bg)
 	for _, w in ipairs(UI.desk._windows) do
 		if w.minimized then
 			local seg = "[" .. (w.title:sub(1, 12)) .. "]"
 			if x + #seg > UI.W then break end
-			atlasgfx.text(x, y0, seg)
+			atlasgfx.text(x, y0, seg, "bright_white", 22)
 			UI._min_strip[#UI._min_strip + 1] = { w = w, x0 = x, x1 = x + #seg - 1 }
 			x = x + #seg + 2
 		end
