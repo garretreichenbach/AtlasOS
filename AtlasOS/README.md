@@ -6,6 +6,35 @@
 
 LuaMade runs **`/etc/startup.lua`** at terminal boot when that file exists ([Startup behavior](https://garretreichenbach.github.io/Logiscript/markdown/core/luamade.html#startup-behavior)).
 
+### Web install via `httpget`
+
+Build the single-file installer from this repo:
+
+```bash
+python3 scripts/build_web_installer.py
+```
+
+That writes **`dist/atlasos-web-installer.lua`**. Keep that generated file committed when installer sources change; the repository workflow rebuilds it and fails if it drifts from the checked-in copy. Host that file on a web server that LuaMade can reach (for example GitHub raw content or GitHub Pages if the domain is trusted by the server).
+
+- **Rolling/latest channel:** use the `main` branch `dist/atlasos-web-installer.lua` URL shown below.
+- **Version-pinned channel:** tag a release like `v1.0.0`; the release workflow rebuilds the installer and uploads the same file as a GitHub Release asset so you can host a stable versioned download URL instead of tracking `main`.
+
+For the simplest in-game install, fetch it straight into **`/etc/startup.lua`** and reboot once:
+
+```text
+httpget https://raw.githubusercontent.com/garretreichenbach/AtlasOS/main/dist/atlasos-web-installer.lua /etc/startup.lua
+reboot
+```
+
+On that next boot, the generated installer unpacks **`AtlasOS/`** into **`/home/AtlasOS/`** and **`Lib/`** into **`/home/lib/`**, rewrites **`/etc/startup.lua`** to the normal AtlasOS boot hook, then launches the first-run setup immediately.
+
+If you need to preserve an existing custom startup script, use the safer two-step flow instead so the installer can back it up to **`/etc/startup.lua.atlasos_backup`** before replacing it:
+
+```text
+httpget https://raw.githubusercontent.com/garretreichenbach/AtlasOS/main/dist/atlasos-web-installer.lua /tmp/atlasos-web-installer.lua
+run /tmp/atlasos-web-installer.lua
+```
+
 1. Copy this repo into the computer’s virtual FS (either layout works):
    - **Full install:** **`Lib/`** → **`/home/lib/`**, **`AtlasOS/`** → **`/home/AtlasOS/`**
    - **Install-from-media:** put the same two folders on a mounted volume (e.g. **`/disk/AtlasOS`**, **`/disk/Lib`**) — the first-run loader **copies** them into **`/home/`** while the progress bar advances. Checked roots include **`/install`**, **`/mnt`**, **`/media`**, **`/disk`**, **`/disk1`**, **`/floppy`**. Optionally set **`/etc/AtlasOS/staging_root.txt`** to a single line (absolute path) if your mount point is elsewhere.

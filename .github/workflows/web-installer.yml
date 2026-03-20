@@ -1,0 +1,48 @@
+name: Web installer
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'AtlasOS/**'
+      - 'Lib/**'
+      - 'scripts/build_web_installer.py'
+      - '.github/workflows/web-installer.yml'
+  pull_request:
+    paths:
+      - 'AtlasOS/**'
+      - 'Lib/**'
+      - 'scripts/build_web_installer.py'
+      - '.github/workflows/web-installer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-web-installer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Build installer
+        run: python3 scripts/build_web_installer.py
+
+      - name: Verify generated installer is up to date
+        run: git diff --exit-code -- dist/atlasos-web-installer.lua
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlasos-web-installer
+          path: dist/atlasos-web-installer.lua
+          if-no-files-found: error
+

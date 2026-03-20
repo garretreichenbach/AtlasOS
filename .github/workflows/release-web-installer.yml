@@ -1,0 +1,44 @@
+name: Release web installer
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-web-installer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Build installer
+        run: python3 scripts/build_web_installer.py
+
+      - name: Verify generated installer is up to date
+        run: git diff --exit-code -- dist/atlasos-web-installer.lua
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlasos-web-installer-${{ github.ref_name }}
+          path: dist/atlasos-web-installer.lua
+          if-no-files-found: error
+
+      - name: Publish GitHub release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/atlasos-web-installer.lua
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+
