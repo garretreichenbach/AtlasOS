@@ -8,7 +8,19 @@ local MARKER = "ATLASOS_WEB_INSTALLER_V1"
 local STARTUP_PATH = "/etc/startup.lua"
 local STARTUP_BACKUP = "/etc/startup.lua.atlasos_backup"
 local NORMAL_STARTUP = [[-- AtlasOS auto-start (LuaMade runs this at boot; see Logiscript "Startup behavior")
-dofile("/home/AtlasOS/installer_gate.lua")
+local function atlas_run(path)
+  if type(dofile) == "function" then
+	return dofile(path)
+  end
+  if type(loadfile) == "function" then
+	local chunk, err = loadfile(path)
+	if not chunk then error(err) end
+	return chunk()
+  end
+  error("AtlasOS startup: no script loader available (dofile/loadfile missing)")
+end
+
+atlas_run("/home/AtlasOS/installer_gate.lua")
 ]]
 local CORE_PATHS = {
 	[[/home/AtlasOS/installer_gate.lua]],
@@ -6848,6 +6860,20 @@ local function verify_core_paths()
 	return missing
 end
 
+local function run_script(path)
+	if type(dofile) == "function" then
+		return dofile(path)
+	end
+	if type(loadfile) == "function" then
+		local chunk, err = loadfile(path)
+		if not chunk then
+			error("could not load " .. tostring(path) .. ": " .. tostring(err))
+		end
+		return chunk()
+	end
+	error("no script loader available (dofile/loadfile missing)")
+end
+
 local function looks_like_atlas_startup(body)
 	body = tostring(body or "")
 	return body:find("installer_gate.lua", 1, true)
@@ -6919,7 +6945,7 @@ local function main()
 	print("Startup hook installed at " .. STARTUP_PATH)
 	print("Launching AtlasOS…")
 	print("")
-	dofile("/home/AtlasOS/installer_gate.lua")
+	run_script("/home/AtlasOS/installer_gate.lua")
 end
 
 local ok, err = pcall(main)
