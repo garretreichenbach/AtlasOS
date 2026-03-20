@@ -26,11 +26,9 @@ local atlasgfx = {
 }
 
 local function probe_bitmap_gfx()
-  if not gfx or type(gfx.rect) ~= "function" then return false end
-  local ok = pcall(function()
-    gfx.rect(0, 0, 1, 1, 0, 0, 0, 1, true)
-  end)
-  return ok
+  -- Some hosts can throw during early boot probe draws even though gfx is valid.
+  -- Treat rect availability as capability and let draw calls use pcall individually.
+  return gfx ~= nil and type(gfx.rect) == "function"
 end
 
 local NAMED = {

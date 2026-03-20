@@ -1318,6 +1318,7 @@ end
 function UI.run_loop()
 	input.consumeKeyboard()
 	local ok, err = pcall(function()
+		UI.redraw()
 		while true do
 			local events = input.poll_all()
 			if #events == 0 then
