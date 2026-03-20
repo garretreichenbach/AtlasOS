@@ -104,10 +104,8 @@ local function size_set(w, h)
 	if atlasgfx.is_bitmap() then
 		atlasgfx.set_canvas_from_cells(w, h)
 		UI._gfx_sized = true
-	elseif gfx and type(gfx.setSize) == "function" then
-		local ok = pcall(gfx.setSize, w, h)
-		if ok then UI._gfx_sized = true end
 	else
+		-- No legacy canvas-size API available; mark sized anyway so init proceeds.
 		UI._gfx_sized = true
 	end
 end

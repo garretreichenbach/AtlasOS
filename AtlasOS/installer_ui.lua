@@ -60,9 +60,6 @@ local function sync_canvas()
 	if atlasgfx.is_bitmap() and gfx and type(gfx.setCanvasSize) == "function" then
 		atlasgfx.set_canvas_from_cells(TARGET_W, TARGET_H)
 	end
-	if gfx and type(gfx.setSize) == "function" and not atlasgfx.is_bitmap() then
-		pcall(gfx.setSize, TARGET_W, TARGET_H)
-	end
 	local cw, ch = atlasgfx.canvas_cells()
 	if cw and ch then W, H = cw, ch end
 	local pw, ph = atlasgfx.canvas_pixels_for_input()

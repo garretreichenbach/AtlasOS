@@ -36,7 +36,7 @@ local CORE_PATHS = {
 }
 
 local BUNDLE_FILE_COUNT = 48
-local BUNDLE_TOTAL_BYTES = 200113
+local BUNDLE_TOTAL_BYTES = 200100
 local BUNDLE = {
 	{
 		path = [[/home/AtlasOS/APPINFO.md]],
@@ -1889,9 +1889,6 @@ local function sync_canvas()
 	if atlasgfx.is_bitmap() and gfx and type(gfx.setCanvasSize) == "function" then
 		atlasgfx.set_canvas_from_cells(TARGET_W, TARGET_H)
 	end
-	if gfx and type(gfx.setSize) == "function" and not atlasgfx.is_bitmap() then
-		pcall(gfx.setSize, TARGET_W, TARGET_H)
-	end
 	local cw, ch = atlasgfx.canvas_cells()
 	if cw and ch then W, H = cw, ch end
 	local pw, ph = atlasgfx.canvas_pixels_for_input()
@@ -2594,10 +2591,8 @@ local function size_set(w, h)
 	if atlasgfx.is_bitmap() then
 		atlasgfx.set_canvas_from_cells(w, h)
 		UI._gfx_sized = true
-	elseif gfx and type(gfx.setSize) == "function" then
-		local ok = pcall(gfx.setSize, w, h)
-		if ok then UI._gfx_sized = true end
 	else
+		-- No legacy canvas-size API available; mark sized anyway so init proceeds.
 		UI._gfx_sized = true
 	end
 end
@@ -4338,8 +4333,10 @@ return M
   Cell-grid UI drawing for LuaMade bitmap gfx (pixel coords + rgba rects).
   https://garretreichenbach.github.io/Logiscript/markdown/graphics/gfx.html
 
-  When the host still exposes legacy text-cell gfx (fillRect with fill char, gfx.text),
-  this module delegates to globals gfx.* unchanged.
+  Current API: gfx.rect, gfx.point, gfx.line, gfx.setCanvasSize, gfx.getWidth/getHeight,
+  gfx.clear, gfx.setLayer, gfx.createLayer, gfx.clearLayer.
+  Legacy text-cell methods (fillRect, text, setColor, render, setAnsiEnabled, setSize)
+  have been removed from the API; those paths in this module are no-ops.
 ]]
 
 if _G.__AtlasGFX then
@@ -4474,8 +4471,7 @@ function atlasgfx.begin_frame()
 end
 
 function atlasgfx.end_frame()
-  if not gfx then return end
-  if type(gfx.render) == "function" then pcall(gfx.render) end
+  -- gfx.render removed in current API; rendering is automatic.
 end
 
 function atlasgfx.cell_to_pixel(cx, cy)
@@ -4491,7 +4487,7 @@ end
 
 function atlasgfx.setColor(fg, bg)
   if not atlasgfx._bitmap then
-    pcall(gfx.setColor, fg, bg)
+    -- gfx.setColor removed in current API; no-op.
     return
   end
   atlasgfx.fg = color_to_rgba(fg, atlasgfx.fg)
@@ -4500,7 +4496,7 @@ end
 
 function atlasgfx.fillRect(x, y, w, h, _)
   if not atlasgfx._bitmap then
-    pcall(gfx.fillRect, x, y, w, h, _ or " ")
+    -- gfx.fillRect removed in current API; no-op.
     return
   end
   x, y, w, h = math.floor(x or 1), math.floor(y or 1), math.floor(w or 1), math.floor(h or 1)
@@ -4513,7 +4509,7 @@ end
 
 function atlasgfx.rect(x, y, w, h, _)
   if not atlasgfx._bitmap then
-    pcall(gfx.rect, x, y, w, h, _)
+    -- Legacy text-cell path; no-op in current API.
     return
   end
   x, y, w, h = math.floor(x or 1), math.floor(y or 1), math.floor(w or 1), math.floor(h or 1)
@@ -4526,7 +4522,7 @@ end
 
 function atlasgfx.text(x, y, str)
   if not atlasgfx._bitmap then
-    pcall(gfx.text, x, y, str)
+    -- gfx.text removed in current API; no-op.
     return
   end
   str = tostring(str or "")
@@ -4558,7 +4554,7 @@ function atlasgfx.text(x, y, str)
 end
 
 function atlasgfx.setAnsiEnabled(on)
-  if gfx and type(gfx.setAnsiEnabled) == "function" then pcall(gfx.setAnsiEnabled, on) end
+  -- gfx.setAnsiEnabled removed in current API; no-op.
 end
 
 --- No-op on bitmap gfx (per-cell scaling removed in new API).
