@@ -28,7 +28,7 @@ local LAYOUT_PATH = "/etc/AtlasOS/layout.txt"
 local GFX_CONF_PATH = "/etc/AtlasOS/gfx.conf"
 local VERSION = "0.3.2"
 
--- Default canvas (cells) before first gfx.setSize; avoid trusting 64x24 default from mod.
+-- Default canvas (cells) before first gfx.setCanvasSize; avoid trusting 64x24 default from mod.
 local CANVAS_DEFAULT_W, CANVAS_DEFAULT_H = 150, 100
 
 --- gfx.conf: cell_scale scales logical cell → pixel size for bitmap gfx (text rasterization).

@@ -36,7 +36,7 @@ local CORE_PATHS = {
 }
 
 local BUNDLE_FILE_COUNT = 48
-local BUNDLE_TOTAL_BYTES = 200100
+local BUNDLE_TOTAL_BYTES = 197452
 local BUNDLE = {
 	{
 		path = [[/home/AtlasOS/APPINFO.md]],
@@ -682,7 +682,6 @@ if not factory then
 				win._chat_hit[#win._chat_hit + 1] = z
 			end
 
-			atlasgfx.setColor(win.client_fg, win.client_bg)
 			local cx0, cy0 = win:client_x(), win:client_y()
 
 			-- column headers (rows cr, cr+1)
@@ -696,13 +695,10 @@ if not factory then
 				if row > list_bottom then break end
 				local lab = srv.name:sub(1, w_srv - 1)
 				if st.sel_srv == i then
-					atlasgfx.setColor(win.client_bg, win.client_fg)
-					atlasgfx.fillRect(cx0, cy0 + row, w_srv, 1, " ")
-					atlasgfx.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)))
-					atlasgfx.setColor(win.client_fg, win.client_bg)
+					atlasgfx.fillRect(cx0, cy0 + row, w_srv, 1, win.client_fg)
+					atlasgfx.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)), win.client_bg, win.client_fg)
 				else
-					atlasgfx.setColor(win.client_fg, win.client_bg)
-					atlasgfx.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)))
+					atlasgfx.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)), win.client_fg, win.client_bg)
 				end
 				add_hit({ x0 = 0, x1 = w_srv - 1, y0 = row, y1 = row, kind = "srv", idx = i })
 			end
@@ -716,12 +712,10 @@ if not factory then
 					if row > list_bottom then break end
 					local lab = ("#" .. cn):sub(1, w_ch - 1)
 					if st.sel_ch == j then
-						atlasgfx.setColor(win.client_bg, win.client_fg)
-						atlasgfx.fillRect(cx0 + w_srv, cy0 + row, w_ch, 1, " ")
-						atlasgfx.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)))
-						atlasgfx.setColor(win.client_fg, win.client_bg)
+						atlasgfx.fillRect(cx0 + w_srv, cy0 + row, w_ch, 1, win.client_fg)
+						atlasgfx.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)), win.client_bg, win.client_fg)
 					else
-						atlasgfx.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)))
+						atlasgfx.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)), win.client_fg, win.client_bg)
 					end
 					add_hit({
 						x0 = w_srv,
@@ -744,21 +738,18 @@ if not factory then
 				if line then
 					line = tostring(line)
 					if #line > msg_w then line = line:sub(1, msg_w) end
-					atlasgfx.setColor(win.client_fg, win.client_bg)
-					atlasgfx.text(cx0 + msg_x, cy0 + row, line)
+					atlasgfx.text(cx0 + msg_x, cy0 + row, line, win.client_fg, win.client_bg)
 				end
 			end
 
 			local hint = st.status
 			if #hint > cw - 2 then hint = hint:sub(1, cw - 5) .. "…" end
-			atlasgfx.setColor("bright_black", win.client_bg)
-			atlasgfx.text(cx0, cy0 + status_row, hint .. string.rep(" ", math.max(0, cw - #hint)))
+			atlasgfx.text(cx0, cy0 + status_row, hint .. string.rep(" ", math.max(0, cw - #hint)), "bright_black", win.client_bg)
 
 			local prompt = st.prompt and ("?" .. (st.prompt.step or "") .. ") ") or ""
 			local buf = prompt .. st.compose
 			if #buf > cw - 3 then buf = "…" .. buf:sub(-(cw - 4)) end
-			atlasgfx.setColor("bright_white", win.client_bg)
-			atlasgfx.text(cx0, cy0 + input_row, "> " .. buf .. string.rep(" ", math.max(0, cw - #buf - 2)))
+			atlasgfx.text(cx0, cy0 + input_row, "> " .. buf .. string.rep(" ", math.max(0, cw - #buf - 2)), "bright_white", win.client_bg)
 
 			shell:paint_dropdown(win)
 		end
@@ -907,7 +898,6 @@ if not factory then
     end
     st.scroll = scroll
 
-    atlasgfx.setColor(win.client_fg, win.client_bg)
     local focused = win.focused
 
     for r = 0, body_h - 1 do
@@ -922,7 +912,7 @@ if not factory then
       end
       if #disp > budget then disp = disp:sub(1, budget) end
       local line = prefix .. disp
-      atlasgfx.text(win:client_x(), win:client_y() + body_start + r, line .. string.rep(" ", cw - #line))
+      atlasgfx.text(win:client_x(), win:client_y() + body_start + r, line .. string.rep(" ", cw - #line), win.client_fg, win.client_bg)
     end
 
     shell:paint_dropdown(win)
@@ -1329,32 +1319,25 @@ if not factory then
     end
 
     local cx0, cy0 = win:client_x(), win:client_y()
-    atlasgfx.setColor(win.client_fg, win.client_bg)
 
     for r = yB, ch - 1 do
-      atlasgfx.text(cx0 + DIV, cy0 + r, "│")
+      atlasgfx.text(cx0 + DIV, cy0 + r, "│", win.client_fg, win.client_bg)
     end
 
-    atlasgfx.setColor("bright_white", win.client_bg)
-    window.draw_text_line(win, 1, yB, "Settings")
-    atlasgfx.setColor(win.client_fg, win.client_bg)
+    window.draw_text_line(win, 1, yB, "Settings", "bright_white")
 
     local row = yB + 2
     for _, c in ipairs(CATS) do
       if row >= ch - 1 then break end
       local sel = (UI._settings_cat == c.id)
-      if sel then
-        atlasgfx.setColor("black", "bright_white")
-        atlasgfx.fillRect(cx0, cy0 + row, LW, 1, " ")
-      else
-        atlasgfx.setColor(win.client_fg, win.client_bg)
-      end
+      local lfg = sel and "black" or win.client_fg
+      local lbg = sel and "bright_white" or win.client_bg
+      if sel then atlasgfx.fillRect(cx0, cy0 + row, LW, 1, "bright_white") end
       local line = (sel and "│ " or "  ") .. c.label
       line = line .. string.rep(" ", math.max(0, LW - #line))
       if #line > LW then line = line:sub(1, LW) end
-      atlasgfx.text(cx0, cy0 + row, line)
+      atlasgfx.text(cx0, cy0 + row, line, lfg, lbg)
       add_zone(0, row, LW - 1, row, "cat:" .. c.id)
-      atlasgfx.setColor(win.client_fg, win.client_bg)
       row = row + 1
     end
 
@@ -1365,9 +1348,7 @@ if not factory then
     local dev = UI.developer_mode_enabled()
 
     local function hdr(s)
-      atlasgfx.setColor("bright_white", win.client_bg)
-      window.draw_text_line(win, R0, rr, (s or ""):sub(1, RW))
-      atlasgfx.setColor(win.client_fg, win.client_bg)
+      window.draw_text_line(win, R0, rr, (s or ""):sub(1, RW), "bright_white")
       rr = rr + 1
     end
 
@@ -1898,74 +1879,61 @@ end
 local function draw_center_text(row, msg, fg, bg)
 	msg = tostring(msg or "")
 	local pad = math.max(1, math.floor((W - #msg) / 2))
-	atlasgfx.setColor(fg, bg)
-	atlasgfx.text(pad, row, msg)
+	atlasgfx.text(pad, row, msg, fg, bg)
 end
 
 local function draw_loading()
 	atlasgfx.begin_frame()
-	atlasgfx.setColor("bright_white", "blue")
-	atlasgfx.fillRect(1, 1, W, H, " ")
+	atlasgfx.fillRect(1, 1, W, H, "blue")
 	draw_center_text(3, "AtlasOS", "bright_yellow", "blue")
 	draw_center_text(5, state.load_title ~= "" and state.load_title or "Working…", "bright_white", "blue")
 	local det = state.load_detail or ""
 	if #det > W - 4 then
 		det = det:sub(1, math.max(1, W - 7)) .. "…"
 	end
-	atlasgfx.setColor("bright_cyan", "blue")
-	atlasgfx.text(2, 6, det)
+	atlasgfx.text(2, 6, det, "bright_cyan", "blue")
 	local hint = state.load_hint or ""
 	if hint ~= "" and H >= 10 then
 		if #hint > W - 4 then
 			hint = hint:sub(1, math.max(1, W - 7)) .. "…"
 		end
-		atlasgfx.setColor("bright_black", "blue")
-		atlasgfx.text(2, 7, hint)
+		atlasgfx.text(2, 7, hint, "bright_black", "blue")
 	end
 	local bar_row = H >= 12 and 9 or 8
 	local bar_x, bar_y, bar_w = 8, bar_row, W - 16
-	atlasgfx.setColor("bright_black", "bright_white")
-	atlasgfx.fillRect(bar_x, bar_y, bar_w, 1, " ")
+	atlasgfx.fillRect(bar_x, bar_y, bar_w, 1, "bright_white")
 	local inner = math.max(0, math.floor(bar_w * state.progress))
 	if inner > 0 then
-		atlasgfx.setColor("black", "bright_green")
-		atlasgfx.fillRect(bar_x, bar_y, inner, 1, " ")
+		atlasgfx.fillRect(bar_x, bar_y, inner, 1, "bright_green")
 	end
-	atlasgfx.setColor("bright_white", "blue")
 	local pct = math.floor(state.progress * 100 + 0.5)
 	draw_center_text(bar_row + 3, tostring(pct) .. "%", "bright_cyan", "blue")
-	atlasgfx.end_frame()
 end
 
 local function draw_error()
 	atlasgfx.begin_frame()
-	atlasgfx.setColor("bright_white", "red")
-	atlasgfx.fillRect(1, 1, W, H, " ")
+	atlasgfx.fillRect(1, 1, W, H, "red")
 	draw_center_text(3, "AtlasOS — installation failed", "bright_yellow", "red")
-	atlasgfx.setColor("bright_white", "red")
 	local row = 6
 	for _, p in ipairs(state.missing) do
 		if row < H - 4 then
-			atlasgfx.text(4, row, p:sub(1, math.max(1, W - 8)))
+			atlasgfx.text(4, row, p:sub(1, math.max(1, W - 8)), "bright_white", "red")
 			row = row + 1
 		end
 	end
 	draw_center_text(H - 4, "Mount repo as /disk/AtlasOS + /disk/Lib or copy into /home/", "bright_white", "red")
 	draw_center_text(H - 2, "Press any key to exit…", "bright_yellow", "red")
-	atlasgfx.end_frame()
 end
 
 local function draw_setup()
 	atlasgfx.begin_frame()
 	local bg = state.theme == "dark" and "black" or "white"
 	local fg = state.theme == "dark" and "bright_white" or "black"
-	atlasgfx.setColor(fg, bg)
-	atlasgfx.fillRect(1, 1, W, H, " ")
+	atlasgfx.fillRect(1, 1, W, H, bg)
 	draw_center_text(2, "Welcome to AtlasOS", "bright_cyan", bg)
 	draw_center_text(4, "Choose your name and theme", fg, bg)
 
-	atlasgfx.setColor(fg, bg)
-	atlasgfx.text(4, 7, "Username" .. (state.focus == 1 and " ◄" or ""))
+	atlasgfx.text(4, 7, "Username" .. (state.focus == 1 and " ◄" or ""), fg, bg)
 	local show = state.username
 	if state.focus == 1 then
 		local blink = (math.floor(state.blink_t / 400) % 2) == 0
@@ -1973,40 +1941,29 @@ local function draw_setup()
 	else
 		show = show .. " "
 	end
-	atlasgfx.setColor("black", "bright_white")
-	atlasgfx.text(4, 8, show:sub(1, math.max(1, W - 10)))
+	atlasgfx.text(4, 8, show:sub(1, math.max(1, W - 10)), "black", "bright_white")
 
-	atlasgfx.setColor(fg, bg)
-	atlasgfx.text(4, 11, "Theme" .. (state.focus == 2 and " ◄" or ""))
+	atlasgfx.text(4, 11, "Theme" .. (state.focus == 2 and " ◄" or ""), fg, bg)
 	local function paint_theme_chip(col, label, which)
 		local on = (state.theme == which)
 		local sel = (state.focus == 2)
+		local cfg, cbg
 		if on then
-			atlasgfx.setColor("black", sel and "bright_cyan" or "bright_green")
+			cfg, cbg = "black", sel and "bright_cyan" or "bright_green"
 		else
-			atlasgfx.setColor(fg, sel and "bright_black" or bg)
+			cfg, cbg = fg, sel and "bright_black" or bg
 		end
-		atlasgfx.text(col, 12, "[ " .. label .. " ]")
+		atlasgfx.text(col, 12, "[ " .. label .. " ]", cfg, cbg)
 	end
 	paint_theme_chip(6, "Light", "light")
 	paint_theme_chip(24, "Dark", "dark")
 
-	if state.focus == 3 then
-		atlasgfx.setColor("black", "bright_yellow")
-	else
-		atlasgfx.setColor(fg, bg)
-	end
-	draw_center_text(
-		15,
-		"[  Continue — Enter  ]",
-		state.focus == 3 and "black" or fg,
-		state.focus == 3 and "bright_yellow" or bg
-	)
+	local cont_fg = state.focus == 3 and "black" or fg
+	local cont_bg = state.focus == 3 and "bright_yellow" or bg
+	draw_center_text(15, "[  Continue — Enter  ]", cont_fg, cont_bg)
 
 	local hint_fg = state.theme == "dark" and "bright_cyan" or "bright_black"
-	atlasgfx.setColor(hint_fg, bg)
-	atlasgfx.text(3, H - 1, "Tab next field  Enter: save on Continue  Typing: name")
-	atlasgfx.end_frame()
+	atlasgfx.text(3, H - 1, "Tab next field  Enter: save on Continue  Typing: name", hint_fg, bg)
 end
 
 local function redraw()
@@ -2515,7 +2472,7 @@ local LAYOUT_PATH = "/etc/AtlasOS/layout.txt"
 local GFX_CONF_PATH = "/etc/AtlasOS/gfx.conf"
 local VERSION = "0.3.2"
 
--- Default canvas (cells) before first gfx.setSize; avoid trusting 64x24 default from mod.
+-- Default canvas (cells) before first gfx.setCanvasSize; avoid trusting 64x24 default from mod.
 local CANVAS_DEFAULT_W, CANVAS_DEFAULT_H = 150, 100
 
 --- gfx.conf: cell_scale scales logical cell → pixel size for bitmap gfx (text rasterization).
@@ -3412,9 +3369,7 @@ function UI.draw_taskbar()
 	local th = UI.TASKBAR_H
 	local y_icon = y0
 	local y_dock = y0 + th - 1
-	atlasgfx.setColor(fg, tb)
-	atlasgfx.fillRect(1, y0, UI.W, th, " ")
-	atlasgfx.rect_pixel_scale_reset()
+	atlasgfx.fillRect(1, y0, UI.W, th, tb)
 
 	local gconf = UI._gfx_conf or read_gfx_conf()
 
@@ -3425,13 +3380,11 @@ function UI.draw_taskbar()
 	local x = 2
 	local start_h = (th >= 3) and 2 or th
 	if UI.start_open then
-		atlasgfx.setColor("bright_white", 28)
-		atlasgfx.fillRect(x, y0, 4, start_h, " ")
+		atlasgfx.fillRect(x, y0, 4, start_h, 28)
 	end
-	atlasgfx.setColor(fg, tb)
-	atlasgfx.text(x + 1, y_icon, "[")
-	atlasgfx.text(x + 2, y_icon, "S")
-	atlasgfx.text(x + 3, y_icon, "]")
+	atlasgfx.text(x + 1, y_icon, "[", fg, tb)
+	atlasgfx.text(x + 2, y_icon, "S", fg, tb)
+	atlasgfx.text(x + 3, y_icon, "]", fg, tb)
 	x = 7
 
 	local sw = search_w
@@ -3456,15 +3409,13 @@ function UI.draw_taskbar()
 		local lines, nrows = startmenu.icon_taskbar_lines(m, th)
 		local sel = (si == UI.taskbar_sel)
 		if sel then
-			atlasgfx.setColor("bright_white", 28)
-			atlasgfx.fillRect(sx, y_icon, slot_w, nrows, " ")
+			atlasgfx.fillRect(sx, y_icon, slot_w, nrows, 28)
 		end
 		for i = 1, nrows do
 			local L = lines[i] or ""
 			local pad = math.max(0, math.floor((slot_w - #L) / 2))
 			local ifg, ibg = gfx_icon_row_style(m, i, fg, tb, sel)
-			atlasgfx.setColor(ifg, ibg)
-			atlasgfx.text(sx + pad, y_icon + i - 1, L)
+			atlasgfx.text(sx + pad, y_icon + i - 1, L, ifg, ibg)
 		end
 	end
 
@@ -3486,25 +3437,22 @@ function UI.draw_taskbar()
 		local gap_x = 7 + sw + 1
 		local gap_w = settings_x - gap_x - 1
 		if gap_w >= 12 then
-			atlasgfx.setColor(28, tb)
 			local status_txt = deskutil.taskbar_status_line(gap_w)
-			atlasgfx.text(gap_x + math.max(0, math.floor((gap_w - #status_txt) / 2)), y0 + 1, status_txt)
+			atlasgfx.text(gap_x + math.max(0, math.floor((gap_w - #status_txt) / 2)), y0 + 1, status_txt, 28, tb)
 		elseif gap_w >= 7 then
-			atlasgfx.setColor(28, tb)
 			local lab = "AtlasOS"
-			atlasgfx.text(gap_x + math.max(0, math.floor((gap_w - #lab) / 2)), y0 + 1, lab)
+			atlasgfx.text(gap_x + math.max(0, math.floor((gap_w - #lab) / 2)), y0 + 1, lab, 28, tb)
 		end
 	end
 
 	local dt = deskutil.dock_datetime_str()
 	local world = deskutil.dock_world_line()
-	atlasgfx.setColor(28, tb)
-	atlasgfx.text(UI.W - #dt, y_dock, dt)
+	atlasgfx.text(UI.W - #dt, y_dock, dt, 28, tb)
 	local room = UI.W - #dt - 4
 	if room >= 8 then
 		local wline = world
 		if #wline > room then wline = wline:sub(1, room - 1) .. "…" end
-		atlasgfx.text(2, y_dock, wline)
+		atlasgfx.text(2, y_dock, wline, 28, tb)
 	end
 end
 
@@ -3517,18 +3465,13 @@ function UI.draw_start_menu()
 	local px = 2
 	local panel_bg = atlastheme.load().mode == "dark" and "black" or "white"
 	local panel_fg = atlastheme.load().mode == "dark" and "white" or "black"
-	atlasgfx.setColor(panel_fg, panel_bg)
-	atlasgfx.fillRect(px, py, pw, ph, " ")
-	atlasgfx.setColor(22, panel_bg)
-	atlasgfx.rect(px, py, pw, ph, "#")
-	atlasgfx.setColor(panel_fg, panel_bg)
+	atlasgfx.fillRect(px, py, pw, ph, panel_bg)
+	atlasgfx.rect(px, py, pw, ph, 22)
 	local row = py + 1
-	atlasgfx.text(px + 1, row, " Search apps and files...")
+	atlasgfx.text(px + 1, row, " Search apps and files...", panel_fg, panel_bg)
 	row = row + 2
-	atlasgfx.setColor(22, panel_bg)
-	atlasgfx.text(px + 1, row, "── Pinned (groups) ──")
+	atlasgfx.text(px + 1, row, "── Pinned (groups) ──", 22, panel_bg)
 	row = row + 1
-	atlasgfx.setColor(panel_fg, panel_bg)
 	local groups = startmenu.load()
 	local tile_w, gap = 14, 1
 	local icon_rows = 4
@@ -3550,8 +3493,7 @@ function UI.draw_start_menu()
 	end
 	for _, g in ipairs(groups) do
 		if row >= py + ph - 8 then break end
-		atlasgfx.setColor(28, panel_bg)
-		atlasgfx.text(px + 1, row, g.name)
+		atlasgfx.text(px + 1, row, g.name, 28, panel_bg)
 		row = row + 1
 		local col = 0
 		for _, id in ipairs(g.ids) do
@@ -3559,17 +3501,14 @@ function UI.draw_start_menu()
 			if m and row + tile_h <= py + ph - 6 then
 				local tx = px + 2 + col * (tile_w + gap)
 				local iw = tile_w - 2
-				atlasgfx.setColor(22, panel_bg)
-				atlasgfx.fillRect(tx, row, tile_w, tile_h, " ")
+				atlasgfx.fillRect(tx, row, tile_w, tile_h, 22)
 				local block = tile_icon_block(m, iw, icon_rows)
 				for r = 1, icon_rows do
 					local ifg, ibg = gfx_icon_row_style(m, r, "bright_white", 22, false)
-					atlasgfx.setColor(ifg, ibg)
-					atlasgfx.text(tx + 1, row + r - 1, block[r])
+					atlasgfx.text(tx + 1, row + r - 1, block[r], ifg, ibg)
 				end
-				atlasgfx.setColor(panel_fg, panel_bg)
 				local lab = m.label:sub(1, iw)
-				atlasgfx.text(tx + 1, row + icon_rows, lab .. string.rep(" ", iw - #lab))
+				atlasgfx.text(tx + 1, row + icon_rows, lab .. string.rep(" ", iw - #lab), panel_fg, panel_bg)
 				col = col + 1
 				if col >= cols then
 					col = 0
@@ -3580,24 +3519,19 @@ function UI.draw_start_menu()
 		if col > 0 then row = row + tile_h + 1 end
 		row = row + 1
 	end
-	atlasgfx.setColor(22, panel_bg)
-	atlasgfx.text(px + 1, row, "── All apps ──")
+	atlasgfx.text(px + 1, row, "── All apps ──", 22, panel_bg)
 	row = row + 1
-	atlasgfx.setColor(panel_fg, panel_bg)
 	for _, id in ipairs(startmenu.all_app_ids()) do
 		if row >= py + ph - 3 then break end
 		local m = startmenu.registry[id]
 		local mark = (startmenu.icon_lines(m)[1] or "?"):sub(1, 8)
 		local mx = px + 2
 		local ifg, ibg = gfx_icon_row_style(m, 1, panel_fg, panel_bg, false)
-		atlasgfx.setColor(ifg, ibg)
-		atlasgfx.text(mx, row, mark)
-		atlasgfx.setColor(panel_fg, panel_bg)
-		atlasgfx.text(mx + #mark, row, "  " .. m.label .. "  (" .. id .. ")")
+		atlasgfx.text(mx, row, mark, ifg, ibg)
+		atlasgfx.text(mx + #mark, row, "  " .. m.label .. "  (" .. id .. ")", panel_fg, panel_bg)
 		row = row + 1
 	end
-	atlasgfx.setColor(28, panel_bg)
-	atlasgfx.text(px + 1, py + ph - 2, "pin user apps only  find|search <text>")
+	atlasgfx.text(px + 1, py + ph - 2, "pin user apps only  find|search <text>", 28, panel_bg)
 end
 
 function UI.draw_activities_overlay()
@@ -3605,26 +3539,23 @@ function UI.draw_activities_overlay()
 	local mx = math.max(3, math.floor(UI.W * 0.04))
 	local my = math.max(2, math.floor(UI.H * 0.06))
 	local ow, oh = UI.W - 2 * mx, UI.H - 2 * my
-	atlasgfx.setColor("white", "black")
-	atlasgfx.fillRect(mx, my, ow, oh, " ")
-	atlasgfx.setColor(22, "white")
-	atlasgfx.rect(mx, my, ow, oh, "#")
-	atlasgfx.setColor("black", "white")
+	atlasgfx.fillRect(mx, my, ow, oh, "black")
+	atlasgfx.rect(mx, my, ow, oh, 22)
 	local ix = mx + 2
 	local iy = my + 1
-	atlasgfx.text(ix, iy, " Activities")
-	atlasgfx.text(ix, iy + 2, "Search: ______ (keyboard API)")
-	atlasgfx.text(ix, iy + 4, "Windows:")
+	atlasgfx.text(ix, iy, " Activities", "black", "white")
+	atlasgfx.text(ix, iy + 2, "Search: ______", "black", "white")
+	atlasgfx.text(ix, iy + 4, "Windows:", "black", "white")
 	local row = iy + 6
 	if UI.desk and UI.desk._windows then
 		for _, w in ipairs(UI.desk._windows) do
 			if row >= my + oh - 3 then break end
 			local tag = w.minimized and " (min)" or ""
-			atlasgfx.text(ix + 2, row, "- " .. (w.title or "Window") .. tag)
+			atlasgfx.text(ix + 2, row, "- " .. (w.title or "Window") .. tag, "black", "white")
 			row = row + 1
 		end
 	end
-	atlasgfx.text(ix, my + oh - 2, "Esc when keys work")
+	atlasgfx.text(ix, my + oh - 2, "Esc when keys work", "black", "white")
 end
 
 function UI.redraw()
@@ -3636,7 +3567,6 @@ function UI.redraw()
 	if pw and ph then
 		input.set_canvas_pixels(pw, ph)
 	end
-	atlasgfx.setAnsiEnabled(true)
 	atlasgfx.begin_frame()
 	local key = UI.W .. "x" .. UI.H
 	if UI.desk and UI._canvas_key ~= key then
@@ -3659,7 +3589,6 @@ function UI.redraw()
 	UI.draw_taskbar()
 	UI.draw_start_menu()
 	UI.draw_activities_overlay()
-	atlasgfx.end_frame()
 end
 
 function UI.toggle_activities()
@@ -3749,16 +3678,14 @@ function UI.draw_minimized_strip()
 	if not has then return end
 	local t = atlastheme.load()
 	local bg = t.mode == "dark" and 235 or 252
-	atlasgfx.setColor(28, bg)
-	atlasgfx.fillRect(1, y0, UI.W, 1, " ")
-	atlasgfx.setColor("bright_white", 22)
+	atlasgfx.fillRect(1, y0, UI.W, 1, bg)
 	local x = 2
-	atlasgfx.text(1, y0, " ")
+	atlasgfx.text(1, y0, " ", 28, bg)
 	for _, w in ipairs(UI.desk._windows) do
 		if w.minimized then
 			local seg = "[" .. (w.title:sub(1, 12)) .. "]"
 			if x + #seg > UI.W then break end
-			atlasgfx.text(x, y0, seg)
+			atlasgfx.text(x, y0, seg, "bright_white", 22)
 			UI._min_strip[#UI._min_strip + 1] = { w = w, x0 = x, x1 = x + #seg - 1 }
 			x = x + #seg + 2
 		end
@@ -4080,12 +4007,11 @@ function appkit.shell(opts)
     local row = 0
     local cy0 = win:client_y()
     local cx0 = win:client_x()
-    atlasgfx.setColor(self.menubar_fg, self.menubar_bg)
-    atlasgfx.fillRect(cx0, cy0 + row, cw, 1, " ")
+    atlasgfx.fillRect(cx0, cy0 + row, cw, 1, self.menubar_bg)
     for i, m in ipairs(self.menubar) do
       local lab = " " .. clamp(m.label, 20) .. " "
       if x + #lab > cw then break end
-      atlasgfx.text(cx0 + x, cy0 + row, lab)
+      atlasgfx.text(cx0 + x, cy0 + row, lab, self.menubar_fg, self.menubar_bg)
       self._menu_layout[i] = { x0 = x, x1 = x + #lab - 1, label = m.label }
       self._bar_zones[#self._bar_zones + 1] = {
         x0 = x,
@@ -4107,8 +4033,7 @@ function appkit.shell(opts)
     local cw, ch = win:client_w(), win:client_h()
     if row >= ch then return start_row end
     local cx0, cy0 = win:client_x(), win:client_y()
-    atlasgfx.setColor(self.toolbar_fg, self.toolbar_bg)
-    atlasgfx.fillRect(cx0, cy0 + row, cw, 1, " ")
+    atlasgfx.fillRect(cx0, cy0 + row, cw, 1, self.toolbar_bg)
     local x = 0
     for _, b in ipairs(self.toolbar) do
       local w = math.max(3, math.floor(b.w or (#tostring(b.label or "") + 4)))
@@ -4138,7 +4063,6 @@ function appkit.shell(opts)
     row = layout_toolbar(self, win, row)
     local ch = win:client_h()
     if row < ch then
-      atlasgfx.setColor(win.client_fg, win.client_bg)
       widgets.hrule(win, row, "-")
     end
   end
@@ -4169,14 +4093,12 @@ function appkit.shell(opts)
     end
 
     local cx0, cy0 = win:client_x(), win:client_y()
-    atlasgfx.setColor(self.dd_border, self.dd_bg)
-    atlasgfx.rect(cx0 + x0, cy0 + y0, box_w, box_h, "#")
+    atlasgfx.rect(cx0 + x0, cy0 + y0, box_w, box_h, self.dd_border)
     for i, it in ipairs(items) do
       if i + 1 >= box_h then break end
       local line = " " .. clamp(it.label, box_w - 2)
       line = line .. string.rep(" ", math.max(0, box_w - #line))
-      atlasgfx.setColor(self.dd_fg, self.dd_bg)
-      atlasgfx.text(cx0 + x0, cy0 + y0 + i, line:sub(1, box_w))
+      atlasgfx.text(cx0 + x0, cy0 + y0 + i, line:sub(1, box_w), self.dd_fg, self.dd_bg)
       self._dd_zones[#self._dd_zones + 1] = {
         x0 = x0,
         y0 = y0 + i,
@@ -4333,10 +4255,14 @@ return M
   Cell-grid UI drawing for LuaMade bitmap gfx (pixel coords + rgba rects).
   https://garretreichenbach.github.io/Logiscript/markdown/graphics/gfx.html
 
-  Current API: gfx.rect, gfx.point, gfx.line, gfx.setCanvasSize, gfx.getWidth/getHeight,
-  gfx.clear, gfx.setLayer, gfx.createLayer, gfx.clearLayer.
-  Legacy text-cell methods (fillRect, text, setColor, render, setAnsiEnabled, setSize)
-  have been removed from the API; those paths in this module are no-ops.
+  Current API (drawing): gfx.rect(x,y,w,h,r,g,b,a,filled), gfx.point, gfx.line
+  Canvas: gfx.setCanvasSize, gfx.getWidth/getHeight
+  Layers: gfx.clear, gfx.setLayer, gfx.createLayer, gfx.clearLayer
+
+  All draw calls pass color directly — there is no global color state.
+  atlasgfx.fillRect(x,y,w,h,bg_color)       filled rect in bg_color
+  atlasgfx.rect(x,y,w,h,fg_color)           outline rect in fg_color
+  atlasgfx.text(x,y,str,fg_color,bg_color)  pixel-font text
 ]]
 
 if _G.__AtlasGFX then
@@ -4350,8 +4276,6 @@ local atlasgfx = {
   cell_w = 8,
   cell_h = 14,
   layer = "atlas",
-  fg = { 1, 1, 1, 1 },
-  bg = { 0, 0, 0, 1 },
 }
 
 local function probe_bitmap_gfx()
@@ -4470,65 +4394,34 @@ function atlasgfx.begin_frame()
   end
 end
 
-function atlasgfx.end_frame()
-  -- gfx.render removed in current API; rendering is automatic.
-end
-
-function atlasgfx.cell_to_pixel(cx, cy)
-  return (math.floor(cx or 1) - 1) * atlasgfx.cell_w, (math.floor(cy or 1) - 1) * atlasgfx.cell_h
-end
-
---- Mouse / uiX uiY (canvas pixels, origin top-left) → 1-based cell index.
-function atlasgfx.pixel_to_cell_rel(px, py)
-  local cx = math.floor((tonumber(px) or 0) / atlasgfx.cell_w) + 1
-  local cy = math.floor((tonumber(py) or 0) / atlasgfx.cell_h) + 1
-  return cx, cy
-end
-
-function atlasgfx.setColor(fg, bg)
-  if not atlasgfx._bitmap then
-    -- gfx.setColor removed in current API; no-op.
-    return
-  end
-  atlasgfx.fg = color_to_rgba(fg, atlasgfx.fg)
-  atlasgfx.bg = color_to_rgba(bg, atlasgfx.bg)
-end
-
-function atlasgfx.fillRect(x, y, w, h, _)
-  if not atlasgfx._bitmap then
-    -- gfx.fillRect removed in current API; no-op.
-    return
-  end
+function atlasgfx.fillRect(x, y, w, h, bg_color)
+  if not atlasgfx._bitmap then return end
   x, y, w, h = math.floor(x or 1), math.floor(y or 1), math.floor(w or 1), math.floor(h or 1)
   if w < 1 or h < 1 then return end
   local px, py = atlasgfx.cell_to_pixel(x, y)
   local pw, ph = w * atlasgfx.cell_w, h * atlasgfx.cell_h
-  local r, g, b, a = atlasgfx.bg[1], atlasgfx.bg[2], atlasgfx.bg[3], atlasgfx.bg[4]
-  pcall(gfx.rect, px, py, pw, ph, r, g, b, a, true)
+  local c = color_to_rgba(bg_color, { 0, 0, 0, 1 })
+  pcall(gfx.rect, px, py, pw, ph, c[1], c[2], c[3], c[4], true)
 end
 
-function atlasgfx.rect(x, y, w, h, _)
-  if not atlasgfx._bitmap then
-    -- Legacy text-cell path; no-op in current API.
-    return
-  end
+function atlasgfx.rect(x, y, w, h, fg_color)
+  if not atlasgfx._bitmap then return end
   x, y, w, h = math.floor(x or 1), math.floor(y or 1), math.floor(w or 1), math.floor(h or 1)
   if w < 2 or h < 2 then return end
   local px, py = atlasgfx.cell_to_pixel(x, y)
   local pw, ph = w * atlasgfx.cell_w, h * atlasgfx.cell_h
-  local r, g, b, a = atlasgfx.fg[1], atlasgfx.fg[2], atlasgfx.fg[3], atlasgfx.fg[4]
-  pcall(gfx.rect, px, py, pw, ph, r, g, b, a, false)
+  local c = color_to_rgba(fg_color, { 1, 1, 1, 1 })
+  pcall(gfx.rect, px, py, pw, ph, c[1], c[2], c[3], c[4], false)
 end
 
-function atlasgfx.text(x, y, str)
-  if not atlasgfx._bitmap then
-    -- gfx.text removed in current API; no-op.
-    return
-  end
+function atlasgfx.text(x, y, str, fg_color, bg_color)
+  if not atlasgfx._bitmap then return end
   str = tostring(str or "")
   x, y = math.floor(x or 1), math.floor(y or 1)
-  local rf, gf, bf, af = atlasgfx.fg[1], atlasgfx.fg[2], atlasgfx.fg[3], atlasgfx.fg[4]
-  local br, bgc, bb, ba = atlasgfx.bg[1], atlasgfx.bg[2], atlasgfx.bg[3], atlasgfx.bg[4]
+  local cf = color_to_rgba(fg_color, { 1, 1, 1, 1 })
+  local cb = color_to_rgba(bg_color, { 0, 0, 0, 1 })
+  local rf, gf, bf, af = cf[1], cf[2], cf[3], cf[4]
+  local br, bgc, bb, ba = cb[1], cb[2], cb[3], cb[4]
   local scale = math.min(atlasgfx.cell_w / 8, atlasgfx.cell_h / 8)
   scale = math.max(1, math.floor(scale))
   for i = 1, #str do
@@ -4553,14 +4446,17 @@ function atlasgfx.text(x, y, str)
   end
 end
 
-function atlasgfx.setAnsiEnabled(on)
-  -- gfx.setAnsiEnabled removed in current API; no-op.
+function atlasgfx.cell_to_pixel(cx, cy)
+  return (math.floor(cx or 1) - 1) * atlasgfx.cell_w, (math.floor(cy or 1) - 1) * atlasgfx.cell_h
 end
 
---- No-op on bitmap gfx (per-cell scaling removed in new API).
-function atlasgfx.rect_pixel_scale() end
+--- Mouse / uiX uiY (canvas pixels, origin top-left) → 1-based cell index.
+function atlasgfx.pixel_to_cell_rel(px, py)
+  local cx = math.floor((tonumber(px) or 0) / atlasgfx.cell_w) + 1
+  local cy = math.floor((tonumber(py) or 0) / atlasgfx.cell_h) + 1
+  return cx, cy
+end
 
-function atlasgfx.rect_pixel_scale_reset() end
 
 _G.__AtlasGFX = atlasgfx
 return atlasgfx
@@ -6405,8 +6301,7 @@ local function draw_text_line(win, rel_col, rel_row, text)
   local maxc = cw - rel_col
   text = tostring(text)
   if #text > maxc then text = text:sub(1, maxc) end
-  atlasgfx.setColor(win.client_fg, win.client_bg)
-  atlasgfx.text(win:client_x() + rel_col, win:client_y() + rel_row, text)
+  atlasgfx.text(win:client_x() + rel_col, win:client_y() + rel_row, text, win.client_fg, win.client_bg)
 end
 
 local function draw_text_lines(win, lines, start_line, y0)
@@ -6417,13 +6312,12 @@ local function draw_text_lines(win, lines, start_line, y0)
   if ch < 1 or cw < 1 then return end
   local max_rows = ch - y0
   if max_rows < 1 then return end
-  atlasgfx.setColor(win.client_fg, win.client_bg)
   for row = 0, max_rows - 1 do
     local line = lines[start_line + row]
     if line then
       line = tostring(line)
       if #line > cw then line = line:sub(1, cw) end
-      atlasgfx.text(win:client_x(), win:client_y() + y0 + row, line)
+      atlasgfx.text(win:client_x(), win:client_y() + y0 + row, line, win.client_fg, win.client_bg)
     end
   end
 end
@@ -6450,9 +6344,8 @@ function widgets.button(win, col, row, width, label, fg, bg)
   local inner = width - 2
   if #label > inner then label = label:sub(1, inner) end
   local s = "[" .. label .. string.rep(" ", inner - #label) .. "]"
-  atlasgfx.setColor(fg, bg)
-  atlasgfx.fillRect(cx + col, cy + row, width, 1, " ")
-  atlasgfx.text(cx + col, cy + row, s)
+  atlasgfx.fillRect(cx + col, cy + row, width, 1, bg)
+  atlasgfx.text(cx + col, cy + row, s, fg, bg)
 end
 
 function widgets.hrule(win, row, ch)
@@ -6461,8 +6354,7 @@ function widgets.hrule(win, row, ch)
   if cw < 1 then return end
   row = math.floor(row)
   if row < 0 or row >= win:client_h() then return end
-  atlasgfx.setColor(win.client_fg, win.client_bg)
-  atlasgfx.text(win:client_x(), win:client_y() + row, string.rep(ch, cw))
+  atlasgfx.text(win:client_x(), win:client_y() + row, string.rep(ch, cw), win.client_fg, win.client_bg)
 end
 
 function widgets.label_block(win, col, row, text_lines)
@@ -6561,26 +6453,23 @@ end
 function Win:paint()
   if self.minimized then return end
   local x, y, w, h = self.x, self.y, self.w, self.h
-  atlasgfx.setColor(self.body_fg, self.body_bg)
-  atlasgfx.fillRect(x, y, w, h, " ")
-  atlasgfx.rect(x, y, w, h, self.border)
-  atlasgfx.setColor(self.title_fg, self.title_bg)
-  atlasgfx.fillRect(x + 1, y + 1, w - 2, 1, " ")
+  atlasgfx.fillRect(x, y, w, h, self.body_bg)
+  atlasgfx.rect(x, y, w, h, self.body_fg)
+  atlasgfx.fillRect(x + 1, y + 1, w - 2, 1, self.title_bg)
   local btn = title_btn_count(w)
   local tmax = math.max(1, w - 4 - btn)
   local title_prefix = self.focused and "*" or " "
-  atlasgfx.text(x + 2, y + 1, title_prefix .. clamp_title(self.title, tmax))
+  atlasgfx.text(x + 2, y + 1, title_prefix .. clamp_title(self.title, tmax), self.title_fg, self.title_bg)
   if btn >= 3 then
-    atlasgfx.text(x + w - 4, y + 1, "_")
+    atlasgfx.text(x + w - 4, y + 1, "_", self.title_fg, self.title_bg)
   end
   if btn >= 2 then
-    atlasgfx.text(x + w - 3, y + 1, self.maximized and "v" or "^")
+    atlasgfx.text(x + w - 3, y + 1, self.maximized and "v" or "^", self.title_fg, self.title_bg)
   end
-  atlasgfx.text(x + w - 2, y + 1, "x")
+  atlasgfx.text(x + w - 2, y + 1, "x", self.title_fg, self.title_bg)
   local cw, ch = self:client_w(), self:client_h()
   if cw >= 1 and ch >= 1 then
-    atlasgfx.setColor(self.client_fg, self.client_bg)
-    atlasgfx.fillRect(self:client_x(), self:client_y(), cw, ch, " ")
+    atlasgfx.fillRect(self:client_x(), self:client_y(), cw, ch, self.client_bg)
   end
 end
 
@@ -6631,7 +6520,7 @@ function window.new(o)
 end
 
 --- Single line at (rel_col, rel_row) inside client; truncated to fit.
-function window.draw_text_line(win, rel_col, rel_row, text)
+function window.draw_text_line(win, rel_col, rel_row, text, fg, bg)
   if win.minimized then return end
   local cw, ch = win:client_w(), win:client_h()
   rel_col, rel_row = math.floor(rel_col or 0), math.floor(rel_row or 0)
@@ -6639,8 +6528,7 @@ function window.draw_text_line(win, rel_col, rel_row, text)
   local maxc = cw - rel_col
   text = tostring(text)
   if #text > maxc then text = text:sub(1, maxc) end
-  atlasgfx.setColor(win.client_fg, win.client_bg)
-  atlasgfx.text(win:client_x() + rel_col, win:client_y() + rel_row, text)
+  atlasgfx.text(win:client_x() + rel_col, win:client_y() + rel_row, text, fg or win.client_fg, bg or win.client_bg)
 end
 
 --- Fill client with lines[start_line], lines[start_line+1], … (1-based index).
@@ -6650,13 +6538,12 @@ function window.draw_text_lines(win, lines, start_line)
   start_line = math.max(1, math.floor(start_line or 1))
   local ch, cw = win:client_h(), win:client_w()
   if ch < 1 or cw < 1 then return end
-  atlasgfx.setColor(win.client_fg, win.client_bg)
   for row = 0, ch - 1 do
     local line = lines[start_line + row]
     if line then
       line = tostring(line)
       if #line > cw then line = line:sub(1, cw) end
-      atlasgfx.text(win:client_x(), win:client_y() + row, line)
+      atlasgfx.text(win:client_x(), win:client_y() + row, line, win.client_fg, win.client_bg)
     end
   end
 end
@@ -6777,8 +6664,7 @@ end
 function window.Desktop.paint_region(d, gx, gy, gw, gh)
   gx, gy = math.max(1, math.floor(gx)), math.max(1, math.floor(gy))
   gw, gh = math.max(1, math.floor(gw)), math.max(1, math.floor(gh))
-  atlasgfx.setColor(d.bg_fg, d.bg_bg)
-  atlasgfx.fillRect(gx, gy, gw, gh, d.fill)
+  atlasgfx.fillRect(gx, gy, gw, gh, d.bg_bg)
   for i = 1, #d._windows do
     if not d._windows[i].minimized then
       d._windows[i]:paint()
