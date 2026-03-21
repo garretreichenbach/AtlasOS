@@ -77,7 +77,7 @@ local CORE_PATHS = {
 }
 
 local BUNDLE_FILE_COUNT = 48
-local BUNDLE_TOTAL_BYTES = 215888
+local BUNDLE_TOTAL_BYTES = 216508
 local BUNDLE = {
 	{
 		path = [[/home/AtlasOS/APPINFO.md]],
@@ -6801,7 +6801,13 @@ return M
 ]]
 
 local draw = dofile("/home/lib/atlas_draw.lua")
+local atlas_color = dofile("/home/lib/atlas_color.lua")
 local widgets = {}
+
+-- Pixel conversion helpers (gfx_2d uses pixels; cells are 1-based)
+local CW = draw.cell_w
+local CH = draw.cell_h
+local function C(token) return atlas_color.resolve(token) end
 
 local function draw_text_line(win, rel_col, rel_row, text)
   local cw, ch = win:client_w(), win:client_h()
@@ -6842,6 +6848,8 @@ function widgets.log_tail_index(lines, visible_rows)
   return n - visible_rows + 1
 end
 
+--- Draw a text button at client-relative (col, row).
+--- NOTE: Callers should migrate to gui_lib.Button directly in Phase 2.6 for hover/pressed state.
 function widgets.button(win, col, row, width, label, fg, bg)
   fg, bg = fg or "bright_white", bg or "blue"
   local cx, cy = win:client_x(), win:client_y()
@@ -6857,13 +6865,17 @@ function widgets.button(win, col, row, width, label, fg, bg)
   draw.text(cx + col, cy + row, s, fg, bg)
 end
 
-function widgets.hrule(win, row, ch)
-  ch = (ch and tostring(ch):sub(1, 1)) or "-"
-  local cw = win:client_w()
-  if cw < 1 then return end
+--- Draw a horizontal line at client-relative row (pixel-based via gfx_2d.line).
+--- _ch parameter accepted for compatibility but ignored (always draws a pixel line).
+function widgets.hrule(win, row, _ch)
   row = math.floor(row)
-  if row < 0 or row >= win:client_h() then return end
-  draw.text(win:client_x(), win:client_y() + row, string.rep(ch, cw), win.client_fg, win.client_bg)
+  local cw = win:client_w()
+  if cw < 1 or row < 0 or row >= win:client_h() then return end
+  local x1 = (win:client_x() - 1) * CW
+  local x2 = (win:client_x() + cw - 1) * CW - 1
+  local y  = (win:client_y() + row - 1) * CH + math.floor(CH / 2)
+  local r, g, b, a = C(win.client_fg)
+  gfx_2d.line(x1, y, x2, y, r, g, b, a)
 end
 
 function widgets.label_block(win, col, row, text_lines)
