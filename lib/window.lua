@@ -7,7 +7,13 @@
 ]]
 
 local draw = dofile("/home/lib/atlas_draw.lua")
+local atlas_color = dofile("/home/lib/atlas_color.lua")
 local window = {}
+
+-- Pixel conversion helpers (cell coords are 1-based, pixel coords are 0-based)
+local CW = draw.cell_w
+local CH = draw.cell_h
+local function C(token) return atlas_color.resolve(token) end
 
 local function clamp_title(s, maxLen)
   s = tostring(s or "")
@@ -53,27 +59,99 @@ local function title_btn_count(w)
   return 1
 end
 
+-- ── Window Chrome GUI (Phase 2.4) ───────────────────────────────────────────
+--- Build gui_lib components for a window's chrome (bg, border, title, buttons, client area).
+local function build_win_gui(win)
+  local P = gui_lib.Panel
+  local T = gui_lib.Text
+  local B = gui_lib.Button
+  local mgr = gui_lib.GUIManager.new()
+  mgr:setBackgroundColor(0, 0, 0, 0)
+
+  local chrome = P.new(0, 0, 0, 0)
+  local titlebar = P.new(0, 0, 0, 0)
+  titlebar:setBorderColor(0, 0, 0, 0)
+  local title_txt = T.new(0, 0, "")
+  title_txt:setScale(1)
+  local btn_close = B.new(0, 0, 0, 0, "x", function() end)
+  local btn_max = B.new(0, 0, 0, 0, "v", function() end)
+  local btn_min = B.new(0, 0, 0, 0, "_", function() end)
+  local client = P.new(0, 0, 0, 0)
+  client:setBorderColor(0, 0, 0, 0)
+
+  mgr:addComponent(chrome)
+  mgr:addComponent(titlebar)
+  mgr:addComponent(title_txt)
+  mgr:addComponent(btn_close)
+  mgr:addComponent(btn_max)
+  mgr:addComponent(btn_min)
+  mgr:addComponent(client)
+
+  mgr:setLayoutCallback(function(m, _pw, _ph)
+    local x, y, w, h = win.x, win.y, win.w, win.h
+    local btn = title_btn_count(w)
+    local tmax = math.max(1, w - 4 - btn)
+    local prefix = win.focused and "*" or " "
+
+    chrome:setPosition((x-1)*CW, (y-1)*CH)
+    chrome:setSize(w*CW, h*CH)
+    chrome:setBackgroundColor(C(win.body_bg))
+    chrome:setBorderColor(C(win.body_fg))
+
+    titlebar:setPosition(x*CW, y*CH)
+    titlebar:setSize((w-2)*CW, CH)
+    titlebar:setBackgroundColor(C(win.title_bg))
+
+    title_txt:setText(prefix .. clamp_title(win.title, tmax))
+    title_txt:setColor(C(win.title_fg))
+    title_txt:setPosition((x+1)*CW, y*CH)
+
+    btn_close:setPosition((x+w-3)*CW, y*CH)
+    btn_close:setSize(CW, CH)
+    btn_close:setLabel("x")
+    btn_close:setNormalColor(C(win.title_bg))
+
+    if btn >= 2 then
+      btn_max:setVisible(true)
+      btn_max:setPosition((x+w-4)*CW, y*CH)
+      btn_max:setSize(CW, CH)
+      btn_max:setLabel(win.maximized and "v" or "^")
+      btn_max:setNormalColor(C(win.title_bg))
+    else
+      btn_max:setVisible(false)
+    end
+
+    if btn >= 3 then
+      btn_min:setVisible(true)
+      btn_min:setPosition((x+w-5)*CW, y*CH)
+      btn_min:setSize(CW, CH)
+      btn_min:setLabel("_")
+      btn_min:setNormalColor(C(win.title_bg))
+    else
+      btn_min:setVisible(false)
+    end
+
+    local cw, ch = win:client_w(), win:client_h()
+    if cw >= 1 and ch >= 1 then
+      client:setVisible(true)
+      client:setPosition(x*CW, (y+1)*CH)
+      client:setSize(cw*CW, ch*CH)
+      client:setBackgroundColor(C(win.client_bg))
+    else
+      client:setVisible(false)
+    end
+  end)
+
+  win._win_mgr = mgr
+end
+
 function Win:paint()
   if self.minimized then return end
-  local x, y, w, h = self.x, self.y, self.w, self.h
-  draw.fillRect(x, y, w, h, self.body_bg)
-  draw.rect(x, y, w, h, self.body_fg)
-  draw.fillRect(x + 1, y + 1, w - 2, 1, self.title_bg)
-  local btn = title_btn_count(w)
-  local tmax = math.max(1, w - 4 - btn)
-  local title_prefix = self.focused and "*" or " "
-  draw.text(x + 2, y + 1, title_prefix .. clamp_title(self.title, tmax), self.title_fg, self.title_bg)
-  if btn >= 3 then
-    draw.text(x + w - 4, y + 1, "_", self.title_fg, self.title_bg)
+  if not self._win_mgr then
+    build_win_gui(self)
   end
-  if btn >= 2 then
-    draw.text(x + w - 3, y + 1, self.maximized and "v" or "^", self.title_fg, self.title_bg)
-  end
-  draw.text(x + w - 2, y + 1, "x", self.title_fg, self.title_bg)
-  local cw, ch = self:client_w(), self:client_h()
-  if cw >= 1 and ch >= 1 then
-    draw.fillRect(self:client_x(), self:client_y(), cw, ch, self.client_bg)
-  end
+  self._win_mgr:update(0)
+  self._win_mgr:draw()
 end
 
 --- Hit on title bar / frame. Returns "close"|"max"|"min"|"drag"|"client"|nil (nil = outside).
@@ -170,9 +248,15 @@ function window.Desktop.add(d, win)
   end
 end
 
+--- Clean up gui_lib components for a window (called on window removal).
+function window.win_gui_cleanup(win)
+  win._win_mgr = nil
+end
+
 function window.Desktop.remove(d, win)
   local i = index_of(d._windows, win)
   if not i then return false end
+  window.win_gui_cleanup(win)  -- Clean up gui_lib components before removal
   table.remove(d._windows, i)
   if d._focus == win then
     d._focus = d._windows[math.min(i, #d._windows)] or d._windows[#d._windows]
