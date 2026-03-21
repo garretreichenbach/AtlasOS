@@ -77,7 +77,7 @@ local CORE_PATHS = {
 }
 
 local BUNDLE_FILE_COUNT = 48
-local BUNDLE_TOTAL_BYTES = 202513
+local BUNDLE_TOTAL_BYTES = 215888
 local BUNDLE = {
 	{
 		path = [[/home/AtlasOS/APPINFO.md]],
@@ -190,146 +190,6 @@ shell:paint_dropdown(win)  -- last, so the menu draws over content
 ```
 
 Refresh the registry after adding packages: **`reload_apps`** (or restart shell).
-]],
-	},
-	{
-		path = [[/home/AtlasOS/README.md]],
-		body = [[# AtlasOS
-
-**AtlasOS shell:** bottom **taskbar** — **Start [S]** | **search** | fixed **Files / Console** | **your pins** | **Settings** | **Trash**. Middle row (3-line bar): **host · cwd**; bottom row: **left** — computer / **sector** / **system**; **right** — **time + date** (`util.now` + `os.date` when available). **Status** is shown on the bar (no window required); pin the Status app if you want the full panel.
-
-## Install on a LuaMade computer
-
-LuaMade runs **`/etc/startup.lua`** at terminal boot when that file exists ([Startup behavior](https://garretreichenbach.github.io/Logiscript/markdown/core/luamade.html#startup-behavior)).
-
-### Web install via `httpget`
-
-Build the single-file installer from this repo:
-
-```bash
-python3 scripts/build_web_installer.py
-```
-
-That writes **`dist/atlasos-web-installer.lua`**. Keep that generated file committed when installer sources change; the repository workflow rebuilds it and fails if it drifts from the checked-in copy. Host that file on a web server that LuaMade can reach (for example GitHub raw content or GitHub Pages if the domain is trusted by the server).
-
-- **Rolling/latest channel:** use the `main` branch `dist/atlasos-web-installer.lua` URL shown below.
-- **Version-pinned channel:** tag a release like `v1.0.0`; the release workflow rebuilds the installer and uploads the same file as a GitHub Release asset so you can host a stable versioned download URL instead of tracking `main`. You can also run that workflow manually and provide the tag as the workflow `tag` input.
-
-For the simplest in-game install, fetch it straight into **`/etc/startup.lua`** and reboot once:
-
-```text
-httpget https://raw.githubusercontent.com/garretreichenbach/AtlasOS/main/dist/atlasos-web-installer.lua /etc/startup.lua
-reboot
-```
-
-On that next boot, the generated installer unpacks **`AtlasOS/`** into **`/home/AtlasOS/`** and **`Lib/`** into **`/home/lib/`**, rewrites **`/etc/startup.lua`** to the normal AtlasOS boot hook, then launches the first-run setup immediately.
-
-If you need to preserve an existing custom startup script, use the safer two-step flow instead so the installer can back it up to **`/etc/startup.lua.atlasos_backup`** before replacing it:
-
-```text
-httpget https://raw.githubusercontent.com/garretreichenbach/AtlasOS/main/dist/atlasos-web-installer.lua /tmp/atlasos-web-installer.lua
-run /tmp/atlasos-web-installer.lua
-```
-
-1. Copy this repo into the computer’s virtual FS (either layout works):
-   - **Full install:** **`Lib/`** → **`/home/lib/`**, **`AtlasOS/`** → **`/home/AtlasOS/`**
-   - **Install-from-media:** put the same two folders on a mounted volume (e.g. **`/disk/AtlasOS`**, **`/disk/Lib`**) — the first-run loader **copies** them into **`/home/`** while the progress bar advances. Checked roots include **`/install`**, **`/mnt`**, **`/media`**, **`/disk`**, **`/disk1`**, **`/floppy`**. Optionally set **`/etc/AtlasOS/staging_root.txt`** to a single line (absolute path) if your mount point is elsewhere.
-2. Run **`run /home/AtlasOS/installer.lua`**. It checks paths, backs up any existing **`/etc/startup.lua`**, and writes a startup that runs **`installer_gate.lua`**: first boot shows a **copy/verify** loader (real file work, not a fake timer) then **setup** (username + light/dark theme), then writes **`/etc/AtlasOS/setup_complete`** and enters the desktop. Later boots skip setup. To run setup again, delete **`/etc/AtlasOS/setup_complete`** (and optionally **`/etc/AtlasOS/profile.json`** / **`theme.json`**) and reboot. **Updating from an older installer** (startup used to call **`boot_desktop.lua`** only): after copying new files, either run through setup once or create **`/etc/AtlasOS/setup_complete`** (e.g. `fs.write` / equivalent) so the gate skips the wizard.
-3. **Reboot** the computer or open a new terminal session.
-
-Without installing startup, you can still run **`run /home/AtlasOS/shell.lua`** then **`desktop`** for the UI only.
-
-**`run /home/AtlasOS/installer.lua uninstall`** — restore the backup startup or remove AtlasOS hook. **`check`** — verify core files exist.
-
-## Taskbar zones
-
-- **Left (fixed):** Files, Console — not in Start menu groups; cannot unpin.
-- **Middle:** Only apps you **`pin`** (e.g. Guide, Search, Editor).
-- **Right (fixed):** Settings (second-to-last), Trash (last) — cannot unpin.
-- **`tasknext` / `docknext`** — cycle highlight over the visible slots (narrow screens may hide some middle pins).
-- **`go`** — open the highlighted slot’s window.
-
-## Search (background)
-
-Search runs in **small steps each `refresh`** (cooperative “background” until the mod exposes real threads).
-
-- **`search <text>`** or **`find <text>`** — start name + file-content search under `/home` and `/etc`.
-- **`search`** with no args — clear search.
-- **`search_status`** — print hit lists in the console.
-
-Taskbar search field shows the query and counts (name / in-file).
-
-## Start menu
-
-- **`start`** — open / close.
-- Pins in **`/etc/AtlasOS/start_menu.json`** (`{ "version": 1, "groups": [ { "name": "Pinned", "ids": ["welcome", …] } ] }`) — **user apps only** (not the fixed taskbar icons). Legacy **`start_menu.txt`** is read once and migrated to JSON, then removed.
-- **`pin <id> [Group]`** · **`unpin <id>`** · **`pin_group <Name>`**
-- App ids: `welcome` (Guide window) `files` `settings` `console` `status` `trash` … — *pinning* `files`/`settings`/`trash`/`console` is ignored for the bar (those stay fixed left/right). **`status`** can be pinned if you want a **Status** window shortcut.
-
-## Other commands
-
-| Command | Action |
-|---------|--------|
-| `refresh` | Redraw (+ advances search) |
-| `theme` | Light / dark (same as Settings → Personalization) |
-| `devmode` | `on` / `off` — show `/home/AtlasOS` in Files (system tree) |
-| `activities` | Window overview |
-| `desktop` | Rebuild desktop + **input loop** (mouse / keys) |
-| `save_layout` | Save layout + taskbar selection |
-| `winnext` | Focus next visible window (same as **Tab** in desktop) |
-| `welcome` / `help` | Focus **Guide** (system info + README) |
-| `files` … `console` | Focus window (restores if minimized) |
-| `cd` | Files app path |
-
-## Window controls (`desktop` + Input API)
-
-Title bar (right): **`_`** minimize · **`^`** maximize / **`v`** restore · **`x`** close. Drag by the **title** (not on buttons). **Click a window** to raise + focus. Minimized windows appear as **`[Title]`** on the row **above the taskbar** — click to restore. **Tab** cycles focus.
-
-## Keyboard / text input
-
-While **desktop** is running, printable keys and **Backspace** / **Delete** are **cancelled** (via `input.cancelEvent` / `cancelKeyEvent` on the mod) unless a text target is active — currently the **Editor** window when focused. Register more with `UI.extra_input_text_active = function() return … end`. Other keys (Esc, Tab, Enter, arrows, …) still drive the shell.
-
-## Settings
-
-The **Settings** window has a **left category list** (System, Personalization, Apps, Developer, About) and a **right pane** with controls. Click a category, then use buttons (theme, developer mode, open `/home/apps`, reload apps, save layout). Narrow windows show a resize hint.
-
-## Developer mode
-
-By default, **`/home/AtlasOS`** is **hidden** in Files (and `cd` there is blocked). Install apps under **`/home/apps`**. Turn **Developer mode** **ON** in **Settings** or **`devmode on`** to show and open the system tree. Persisted in **`/etc/AtlasOS/settings.txt`**.
-
-## Editor
-
-- **Editor** window (starts **minimized**; not on the fixed taskbar). Open from **Start** or `editor` / `runapp editor [path]`.
-- **Ctrl+S** saves to the path in the title bar (default `/home/notes.txt`). Tab inserts two spaces; arrows / Enter / Backspace / Delete as usual.
-
-## Start menu pins (default)
-
-With **no** `start_menu.json` (and no migratable legacy `.txt`), every **user-pinnable** system app appears under **Pinned** (Guide, Search, Editor, Status, … — not Files/Console/Settings/Trash, which stay on fixed taskbar slots).
-
-## System apps (`/home/AtlasOS/apps/`)
-
-Every built-in (Guide via `welcome`, Files, Console, **Chat** — servers/channels on LuaMade **`net`**, …) is a folder with **`appinfo.json`** and usually a **`paint_module`** Lua file (some also use an **`entry`** script for `runapp`). Copy the repo **`AtlasOS/apps/`** tree to **`/home/AtlasOS/apps/`** and **`Lib/atlas_chat_net.lua`** to **`/home/lib/`**. If a package is missing, the taskbar still reserves slots (placeholder `?`) and default pins may show stubs until you install the folder. Chat uses [Network Interface API](https://garretreichenbach.github.io/Logiscript/markdown/io/networking.html) global channels (`openChannel` / `sendChannel` / `receiveChannel`).
-
-## App packages
-
-- Copy folders from **`AtlasOS/packages/`** to **`/home/apps/<name>/`** (each with **`appinfo.json`** + entry script).
-- **`apps`** — list package apps · **`runapp <id>`** · **`reload_apps`**
-- Spec: **`APPINFO.md`**
-
-## Graphics (LuaMade bitmap `gfx`)
-
-The desktop targets the current [Graphics API](https://garretreichenbach.github.io/Logiscript/markdown/graphics/gfx.html): **pixel** canvas, **layers**, and **`gfx.rect` / `gfx.line` / `gfx.point`** with normalized RGBA. AtlasOS keeps a **logical character grid** (windows, taskbar, hit-tests) and draws through **`/home/lib/atlasgfx.lua`**, which rasterizes an embedded **8×8** font (`font8x8_basic`) into cells. Optional `/etc/AtlasOS/gfx.conf` sets **`cell_scale`** (default `1.5`) to scale cell pixel size. On older hosts that still expose **`gfx.text`** / **`gfx.fillRect(..., " ")`**, atlasgfx passes calls through unchanged.
-
-## Files
-
-- LuaMade **`json`** — `require("json")` in settings/appinfo
-- `/home/lib/appinfo.lua` — load `appinfo.json`
-- `/home/lib/appkit.lua` — menu bar, dropdowns, toolbar row for window clients (see `APPINFO.md`)
-- `/home/lib/startmenu.lua` — registry, groups, fixed-slot rules
-- `/home/AtlasOS/ui.lua` — taskbar, search steps, windows
-- `/home/.trash` — Trash taskbar icon focuses **Files** here (`appinfo` `args`); legacy layouts may still have a **Trash** window title (same explorer UI)
-
-See **Install on a LuaMade computer** above for `installer.lua` and `/etc/startup.lua`.
 ]],
 	},
 	{
@@ -2360,6 +2220,146 @@ end
 ]=],
 	},
 	{
+		path = [[/home/AtlasOS/README.md]],
+		body = [[# AtlasOS
+
+**AtlasOS shell:** bottom **taskbar** — **Start [S]** | **search** | fixed **Files / Console** | **your pins** | **Settings** | **Trash**. Middle row (3-line bar): **host · cwd**; bottom row: **left** — computer / **sector** / **system**; **right** — **time + date** (`util.now` + `os.date` when available). **Status** is shown on the bar (no window required); pin the Status app if you want the full panel.
+
+## Install on a LuaMade computer
+
+LuaMade runs **`/etc/startup.lua`** at terminal boot when that file exists ([Startup behavior](https://garretreichenbach.github.io/Logiscript/markdown/core/luamade.html#startup-behavior)).
+
+### Web install via `httpget`
+
+Build the single-file installer from this repo:
+
+```bash
+python3 scripts/build_web_installer.py
+```
+
+That writes **`dist/atlasos-web-installer.lua`**. Keep that generated file committed when installer sources change; the repository workflow rebuilds it and fails if it drifts from the checked-in copy. Host that file on a web server that LuaMade can reach (for example GitHub raw content or GitHub Pages if the domain is trusted by the server).
+
+- **Rolling/latest channel:** use the `main` branch `dist/atlasos-web-installer.lua` URL shown below.
+- **Version-pinned channel:** tag a release like `v1.0.0`; the release workflow rebuilds the installer and uploads the same file as a GitHub Release asset so you can host a stable versioned download URL instead of tracking `main`. You can also run that workflow manually and provide the tag as the workflow `tag` input.
+
+For the simplest in-game install, fetch it straight into **`/etc/startup.lua`** and reboot once:
+
+```text
+httpget https://raw.githubusercontent.com/garretreichenbach/AtlasOS/main/dist/atlasos-web-installer.lua /etc/startup.lua
+reboot
+```
+
+On that next boot, the generated installer unpacks **`AtlasOS/`** into **`/home/AtlasOS/`** and **`Lib/`** into **`/home/lib/`**, rewrites **`/etc/startup.lua`** to the normal AtlasOS boot hook, then launches the first-run setup immediately.
+
+If you need to preserve an existing custom startup script, use the safer two-step flow instead so the installer can back it up to **`/etc/startup.lua.atlasos_backup`** before replacing it:
+
+```text
+httpget https://raw.githubusercontent.com/garretreichenbach/AtlasOS/main/dist/atlasos-web-installer.lua /tmp/atlasos-web-installer.lua
+run /tmp/atlasos-web-installer.lua
+```
+
+1. Copy this repo into the computer’s virtual FS (either layout works):
+   - **Full install:** **`Lib/`** → **`/home/lib/`**, **`AtlasOS/`** → **`/home/AtlasOS/`**
+   - **Install-from-media:** put the same two folders on a mounted volume (e.g. **`/disk/AtlasOS`**, **`/disk/Lib`**) — the first-run loader **copies** them into **`/home/`** while the progress bar advances. Checked roots include **`/install`**, **`/mnt`**, **`/media`**, **`/disk`**, **`/disk1`**, **`/floppy`**. Optionally set **`/etc/AtlasOS/staging_root.txt`** to a single line (absolute path) if your mount point is elsewhere.
+2. Run **`run /home/AtlasOS/installer.lua`**. It checks paths, backs up any existing **`/etc/startup.lua`**, and writes a startup that runs **`installer_gate.lua`**: first boot shows a **copy/verify** loader (real file work, not a fake timer) then **setup** (username + light/dark theme), then writes **`/etc/AtlasOS/setup_complete`** and enters the desktop. Later boots skip setup. To run setup again, delete **`/etc/AtlasOS/setup_complete`** (and optionally **`/etc/AtlasOS/profile.json`** / **`theme.json`**) and reboot. **Updating from an older installer** (startup used to call **`boot_desktop.lua`** only): after copying new files, either run through setup once or create **`/etc/AtlasOS/setup_complete`** (e.g. `fs.write` / equivalent) so the gate skips the wizard.
+3. **Reboot** the computer or open a new terminal session.
+
+Without installing startup, you can still run **`run /home/AtlasOS/shell.lua`** then **`desktop`** for the UI only.
+
+**`run /home/AtlasOS/installer.lua uninstall`** — restore the backup startup or remove AtlasOS hook. **`check`** — verify core files exist.
+
+## Taskbar zones
+
+- **Left (fixed):** Files, Console — not in Start menu groups; cannot unpin.
+- **Middle:** Only apps you **`pin`** (e.g. Guide, Search, Editor).
+- **Right (fixed):** Settings (second-to-last), Trash (last) — cannot unpin.
+- **`tasknext` / `docknext`** — cycle highlight over the visible slots (narrow screens may hide some middle pins).
+- **`go`** — open the highlighted slot’s window.
+
+## Search (background)
+
+Search runs in **small steps each `refresh`** (cooperative “background” until the mod exposes real threads).
+
+- **`search <text>`** or **`find <text>`** — start name + file-content search under `/home` and `/etc`.
+- **`search`** with no args — clear search.
+- **`search_status`** — print hit lists in the console.
+
+Taskbar search field shows the query and counts (name / in-file).
+
+## Start menu
+
+- **`start`** — open / close.
+- Pins in **`/etc/AtlasOS/start_menu.json`** (`{ "version": 1, "groups": [ { "name": "Pinned", "ids": ["welcome", …] } ] }`) — **user apps only** (not the fixed taskbar icons). Legacy **`start_menu.txt`** is read once and migrated to JSON, then removed.
+- **`pin <id> [Group]`** · **`unpin <id>`** · **`pin_group <Name>`**
+- App ids: `welcome` (Guide window) `files` `settings` `console` `status` `trash` … — *pinning* `files`/`settings`/`trash`/`console` is ignored for the bar (those stay fixed left/right). **`status`** can be pinned if you want a **Status** window shortcut.
+
+## Other commands
+
+| Command | Action |
+|---------|--------|
+| `refresh` | Redraw (+ advances search) |
+| `theme` | Light / dark (same as Settings → Personalization) |
+| `devmode` | `on` / `off` — show `/home/AtlasOS` in Files (system tree) |
+| `activities` | Window overview |
+| `desktop` | Rebuild desktop + **input loop** (mouse / keys) |
+| `save_layout` | Save layout + taskbar selection |
+| `winnext` | Focus next visible window (same as **Tab** in desktop) |
+| `welcome` / `help` | Focus **Guide** (system info + README) |
+| `files` … `console` | Focus window (restores if minimized) |
+| `cd` | Files app path |
+
+## Window controls (`desktop` + Input API)
+
+Title bar (right): **`_`** minimize · **`^`** maximize / **`v`** restore · **`x`** close. Drag by the **title** (not on buttons). **Click a window** to raise + focus. Minimized windows appear as **`[Title]`** on the row **above the taskbar** — click to restore. **Tab** cycles focus.
+
+## Keyboard / text input
+
+While **desktop** is running, printable keys and **Backspace** / **Delete** are **cancelled** (via `input.cancelEvent` / `cancelKeyEvent` on the mod) unless a text target is active — currently the **Editor** window when focused. Register more with `UI.extra_input_text_active = function() return … end`. Other keys (Esc, Tab, Enter, arrows, …) still drive the shell.
+
+## Settings
+
+The **Settings** window has a **left category list** (System, Personalization, Apps, Developer, About) and a **right pane** with controls. Click a category, then use buttons (theme, developer mode, open `/home/apps`, reload apps, save layout). Narrow windows show a resize hint.
+
+## Developer mode
+
+By default, **`/home/AtlasOS`** is **hidden** in Files (and `cd` there is blocked). Install apps under **`/home/apps`**. Turn **Developer mode** **ON** in **Settings** or **`devmode on`** to show and open the system tree. Persisted in **`/etc/AtlasOS/settings.txt`**.
+
+## Editor
+
+- **Editor** window (starts **minimized**; not on the fixed taskbar). Open from **Start** or `editor` / `runapp editor [path]`.
+- **Ctrl+S** saves to the path in the title bar (default `/home/notes.txt`). Tab inserts two spaces; arrows / Enter / Backspace / Delete as usual.
+
+## Start menu pins (default)
+
+With **no** `start_menu.json` (and no migratable legacy `.txt`), every **user-pinnable** system app appears under **Pinned** (Guide, Search, Editor, Status, … — not Files/Console/Settings/Trash, which stay on fixed taskbar slots).
+
+## System apps (`/home/AtlasOS/apps/`)
+
+Every built-in (Guide via `welcome`, Files, Console, **Chat** — servers/channels on LuaMade **`net`**, …) is a folder with **`appinfo.json`** and usually a **`paint_module`** Lua file (some also use an **`entry`** script for `runapp`). Copy the repo **`AtlasOS/apps/`** tree to **`/home/AtlasOS/apps/`** and **`Lib/atlas_chat_net.lua`** to **`/home/lib/`**. If a package is missing, the taskbar still reserves slots (placeholder `?`) and default pins may show stubs until you install the folder. Chat uses [Network Interface API](https://garretreichenbach.github.io/Logiscript/markdown/io/networking.html) global channels (`openChannel` / `sendChannel` / `receiveChannel`).
+
+## App packages
+
+- Copy folders from **`AtlasOS/packages/`** to **`/home/apps/<name>/`** (each with **`appinfo.json`** + entry script).
+- **`apps`** — list package apps · **`runapp <id>`** · **`reload_apps`**
+- Spec: **`APPINFO.md`**
+
+## Graphics (LuaMade bitmap `gfx`)
+
+The desktop targets the current [Graphics API](https://garretreichenbach.github.io/Logiscript/markdown/graphics/gfx.html): **pixel** canvas, **layers**, and **`gfx.rect` / `gfx.line` / `gfx.point`** with normalized RGBA. AtlasOS keeps a **logical character grid** (windows, taskbar, hit-tests) and draws through **`/home/lib/atlasgfx.lua`**, which rasterizes an embedded **8×8** font (`font8x8_basic`) into cells. Optional `/etc/AtlasOS/gfx.conf` sets **`cell_scale`** (default `1.5`) to scale cell pixel size. On older hosts that still expose **`gfx.text`** / **`gfx.fillRect(..., " ")`**, atlasgfx passes calls through unchanged.
+
+## Files
+
+- LuaMade **`json`** — `require("json")` in settings/appinfo
+- `/home/lib/appinfo.lua` — load `appinfo.json`
+- `/home/lib/appkit.lua` — menu bar, dropdowns, toolbar row for window clients (see `APPINFO.md`)
+- `/home/lib/startmenu.lua` — registry, groups, fixed-slot rules
+- `/home/AtlasOS/ui.lua` — taskbar, search steps, windows
+- `/home/.trash` — Trash taskbar icon focuses **Files** here (`appinfo` `args`); legacy layouts may still have a **Trash** window title (same explorer UI)
+
+See **Install on a LuaMade computer** above for `installer.lua` and `/etc/startup.lua`.
+]],
+	},
+	{
 		path = [[/home/AtlasOS/shell.lua]],
 		body = [=[--[[
   AtlasOS — boots into Ubuntu-like desktop. Terminal commands = fallback until input API.
@@ -2649,6 +2649,7 @@ local input = dofile("/home/lib/input.lua")
 local startmenu = _G.startmenu or dofile("/home/lib/startmenu.lua")
 _G.startmenu = startmenu
 local draw = dofile("/home/lib/atlas_draw.lua")
+local atlas_color = dofile("/home/lib/atlas_color.lua")
 local appkit = dofile("/home/lib/appkit.lua")
 local paths = dofile("/home/lib/desktop_paths.lua")
 local deskutil = dofile("/home/lib/desktop_util.lua")
@@ -2714,6 +2715,427 @@ local UI = {
 	_drag = nil,
 	_min_strip = {},
 }
+
+-- ── Taskbar GUI (Phase 2.2) ─────────────────────────────────────────────────
+-- Cell→pixel helpers (match atlas_draw CELL_W=8, CELL_H=10)
+local CW, CH = draw.cell_w, draw.cell_h
+local function C(token) return atlas_color.resolve(token) end
+
+-- Persistent gui_lib components for the taskbar strip.
+-- Assumption: gui_lib.GUIManager:draw() issues gfx_2d.rect/text calls without
+-- managing its own clear/batch cycle, so it can be called inside the existing
+-- draw.begin_frame() / draw.end_frame() batch in UI.redraw().
+local _TB_POOL      = 24
+local _tb_mgr       = nil
+local _tb_key       = nil    -- "W:H:TASKBAR_H" — rebuild on canvas change
+local _tb_bg        = nil    -- Panel: full taskbar bg strip
+local _tb_start     = nil    -- Panel: start-button zone
+local _tb_slot_pool = {}     -- Panels: one per app slot (pooled)
+local _tb_status    = nil    -- Text: centre status line (row 2 when th >= 3)
+local _tb_clock     = nil    -- Text: clock / date (dock row, right-aligned)
+local _tb_world     = nil    -- Text: world / entity line (dock row, left)
+-- Per-slot icon rendering data, populated by the layout callback each frame:
+local _tb_icon_data = {}     -- [i] = {sx, y_icon, slot_w, nrows, lines, sel, meta}
+local _tb_search_w  = 0      -- search bar width (cells), needed by search API call
+local _tb_y0        = 1      -- taskbar top row (1-based cells)
+
+local function build_taskbar_gui()
+	local P   = gui_lib.Panel
+	local T   = gui_lib.Text
+	local mgr = gui_lib.GUIManager.new()
+	-- Transparent bg: draw.begin_frame() handles the canvas clear; mgr should
+	-- not fill the whole canvas, only its component panels.
+	mgr:setBackgroundColor(0, 0, 0, 0)
+
+	local bg = P.new(0, 0, 0, 0)
+	bg:setBorderColor(0, 0, 0, 0)
+	mgr:addComponent(bg)
+
+	local start_p = P.new(0, 0, 0, 0)
+	start_p:setBorderColor(0, 0, 0, 0)
+	mgr:addComponent(start_p)
+
+	local pool = {}
+	for i = 1, _TB_POOL do
+		local sp = P.new(0, 0, 0, 0)
+		sp:setBorderColor(0, 0, 0, 0)
+		sp:setVisible(false)
+		mgr:addComponent(sp)
+		pool[i] = sp
+	end
+
+	local st_txt = T.new(0, 0, "")
+	local ck_txt = T.new(0, 0, "")
+	local wd_txt = T.new(0, 0, "")
+	st_txt:setScale(1)
+	ck_txt:setScale(1)
+	wd_txt:setScale(1)
+	mgr:addComponent(st_txt)
+	mgr:addComponent(ck_txt)
+	mgr:addComponent(wd_txt)
+
+	mgr:setLayoutCallback(function(m, _pw, _ph)
+		local t    = atlastheme.load()
+		local tb   = t.mode == "dark" and "black" or 22
+		local W, H, TH = UI.W, UI.H, UI.TASKBAR_H
+		local y0   = H - TH + 1
+		local py0  = (y0 - 1) * CH
+		local ph_tb = TH * CH
+		_tb_y0 = y0
+
+		-- Background strip
+		bg:setPosition(0, py0)
+		bg:setSize(W * CW, ph_tb)
+		bg:setBackgroundColor(C(tb))
+
+		-- Start button area (cells x=2..5)
+		local start_h = (TH >= 3) and 2 or TH
+		start_p:setPosition(1 * CW, py0)     -- cell 2 → pixel x = 1*CW
+		start_p:setSize(4 * CW, start_h * CH)
+		start_p:setBackgroundColor(C(UI.start_open and 28 or tb))
+
+		-- App slot panels
+		local slots, search_w, settings_x = UI.taskbar_slots_visible()
+		local trash_x = W - 19
+		local step    = startmenu.taskbar_icon_step()
+		local slot_w  = 6
+		_tb_search_w  = search_w
+		_tb_icon_data = {}
+		local si = 0
+		for i, id in ipairs(slots) do
+			si = si + 1
+			local sx
+			if i <= #slots - 2 then
+				sx = 7 + search_w + 1 + (i - 1) * step
+			elseif i == #slots - 1 then
+				sx = settings_x
+			else
+				sx = trash_x
+			end
+			local sp = pool[si]
+			if sp then
+				sp:setVisible(true)
+				sp:setPosition((sx - 1) * CW, py0)
+				sp:setSize(slot_w * CW, TH * CH)
+				local sel = (si == UI.taskbar_sel)
+				sp:setBackgroundColor(C(sel and 28 or tb))
+				sp:setBorderColor(0, 0, 0, 0)
+				local meta = startmenu.registry[id]
+				local lines, nrows = {}, 1
+				if meta then
+					lines, nrows = startmenu.icon_taskbar_lines(meta, TH)
+				end
+				_tb_icon_data[si] = {
+					sx = sx, y_icon = y0,
+					slot_w = slot_w, nrows = nrows,
+					lines = lines, sel = sel, meta = meta,
+				}
+			end
+		end
+		for j = si + 1, _TB_POOL do
+			if pool[j] then pool[j]:setVisible(false) end
+		end
+
+		-- Centre status line (second row when th >= 3)
+		if TH >= 3 then
+			local gap_x = 7 + search_w + 1
+			local gap_w = settings_x - gap_x - 1
+			if gap_w >= 7 then
+				local s = deskutil.taskbar_status_line(gap_w)
+				if s == "" then s = "AtlasOS" end
+				st_txt:setVisible(true)
+				st_txt:setText(s)
+				st_txt:setColor(C(28))
+				st_txt:setPosition((gap_x - 1) * CW, py0 + CH)
+				st_txt:setSize(gap_w * CW, CH)
+			else
+				st_txt:setVisible(false)
+			end
+		else
+			st_txt:setVisible(false)
+		end
+
+		-- Clock (dock row, right-aligned)
+		local dt     = deskutil.dock_datetime_str()
+		local y_dock = y0 + TH - 1
+		local py_d   = (y_dock - 1) * CH
+		ck_txt:setText(dt)
+		ck_txt:setColor(C(28))
+		ck_txt:setPosition((W - #dt - 1) * CW, py_d)
+		ck_txt:setSize(#dt * CW, CH)
+
+		-- World / entity line (dock row, left)
+		local world = deskutil.dock_world_line()
+		local room  = W - #dt - 4
+		if room >= 8 then
+			local wl = world
+			if #wl > room then wl = wl:sub(1, room - 1) .. "…" end
+			wd_txt:setVisible(true)
+			wd_txt:setText(wl)
+			wd_txt:setColor(C(28))
+			wd_txt:setPosition(1 * CW, py_d)   -- cell 2 → pixel 8
+			wd_txt:setSize(room * CW, CH)
+		else
+			wd_txt:setVisible(false)
+		end
+	end)
+
+	_tb_mgr       = mgr
+	_tb_bg        = bg
+	_tb_start     = start_p
+	_tb_slot_pool = pool
+	_tb_status    = st_txt
+	_tb_clock     = ck_txt
+	_tb_world     = wd_txt
+end
+
+-- ── Start Menu GUI (Phase 2.3) ───────────────────────────────────────────────
+local _SM_MAX_GROUPS = 8      -- max group name labels
+local _SM_MAX_TILES  = 48     -- max tile buttons (pooled)
+local _SM_MAX_APPS   = 64     -- max all-apps rows
+
+local _sm_mgr        = nil     -- GUIManager
+local _sm_key        = nil     -- "W:H:TASKBAR_H" rebuild trigger
+local _sm_panel      = nil     -- Panel: main menu container
+local _sm_search_txt = nil     -- Text: search placeholder
+local _sm_pinned_hdr = nil     -- Text: "── Pinned (groups) ──"
+local _sm_grp_names  = {}      -- Text[]: group name labels
+local _sm_tiles      = {}      -- Button[]: pooled tile buttons
+local _sm_allapps_hdr= nil     -- Text: "── All apps ──"
+local _sm_app_icon   = {}      -- Text[]: all-apps icon marks
+local _sm_app_label  = {}      -- Text[]: all-apps labels
+local _sm_footer_txt = nil     -- Text: hint footer
+-- per-frame tile render data (for icon text overlays)
+local _sm_tile_data  = {}      -- [i] = {tx, row, tile_w, nrows, block, meta}
+
+local function build_start_menu_gui()
+	local P = gui_lib.Panel
+	local T = gui_lib.Text
+	local B = gui_lib.Button
+	local mgr = gui_lib.GUIManager.new()
+	mgr:setBackgroundColor(0, 0, 0, 0)
+
+	local panel = P.new(0, 0, 0, 0)
+	panel:setVisible(false)
+	mgr:addComponent(panel)
+
+	local search_t = T.new(0, 0, " Search apps and files...")
+	search_t:setScale(1) ; search_t:setVisible(false)
+	mgr:addComponent(search_t)
+
+	local pinned_hdr = T.new(0, 0, "")
+	pinned_hdr:setScale(1) ; pinned_hdr:setVisible(false)
+	mgr:addComponent(pinned_hdr)
+
+	local grp_names = {}
+	for i = 1, _SM_MAX_GROUPS do
+		local t = T.new(0, 0, "") ; t:setScale(1) ; t:setVisible(false)
+		mgr:addComponent(t)
+		grp_names[i] = t
+	end
+
+	local tiles = {}
+	for i = 1, _SM_MAX_TILES do
+		local b = B.new(0, 0, 0, 0, "", function() end)
+		b:setVisible(false)
+		mgr:addComponent(b)
+		tiles[i] = b
+	end
+
+	local allapps_hdr = T.new(0, 0, "")
+	allapps_hdr:setScale(1) ; allapps_hdr:setVisible(false)
+	mgr:addComponent(allapps_hdr)
+
+	local app_icons, app_labels = {}, {}
+	for i = 1, _SM_MAX_APPS do
+		local ic = T.new(0, 0, "") ; ic:setScale(1) ; ic:setVisible(false)
+		local lb = T.new(0, 0, "") ; lb:setScale(1) ; lb:setVisible(false)
+		mgr:addComponent(ic)
+		mgr:addComponent(lb)
+		app_icons[i] = ic ; app_labels[i] = lb
+	end
+
+	local footer = T.new(0, 0, "")
+	footer:setScale(1) ; footer:setVisible(false)
+	mgr:addComponent(footer)
+
+	mgr:setLayoutCallback(function(m, _pw, _ph)
+		local visible = UI.start_open
+		local t   = atlastheme.load()
+		local th  = UI.TASKBAR_H
+		local W, H = UI.W, UI.H
+		local pw  = math.min(50, math.max(36, math.floor(W * 0.52)))
+		local ph  = math.min(H - th - 2, math.max(14, math.floor(H * 0.68)))
+		local py  = H - th - ph + 1
+		local px  = 2
+		local panel_bg_tok = t.mode == "dark" and "black" or "white"
+		local panel_fg_tok = t.mode == "dark" and "white" or "black"
+		local r,g,b,a = C(panel_bg_tok)
+		local fr,fg_,fb,fa = C(panel_fg_tok)
+		local hr,hg,hb,ha = C(28)   -- highlight/accent color
+
+		_sm_panel:setVisible(visible)
+		_sm_panel:setPosition((px-1)*CW, (py-1)*CH)
+		_sm_panel:setSize(pw*CW, ph*CH)
+		_sm_panel:setBackgroundColor(r,g,b,a)
+		_sm_panel:setBorderColor(hr,hg,hb,ha)
+
+		if not visible then
+			for i = 1, _SM_MAX_GROUPS do if _sm_grp_names[i] then _sm_grp_names[i]:setVisible(false) end end
+			for i = 1, _SM_MAX_TILES do if _sm_tiles[i] then _sm_tiles[i]:setVisible(false) end end
+			for i = 1, _SM_MAX_APPS do
+				if _sm_app_icon[i] then _sm_app_icon[i]:setVisible(false) end
+				if _sm_app_label[i] then _sm_app_label[i]:setVisible(false) end
+			end
+			_sm_search_txt:setVisible(false)
+			_sm_pinned_hdr:setVisible(false)
+			_sm_allapps_hdr:setVisible(false)
+			_sm_footer_txt:setVisible(false)
+			return
+		end
+
+		-- Row counter in cells
+		local row = py + 1
+
+		-- Search placeholder
+		_sm_search_txt:setVisible(true)
+		_sm_search_txt:setText(" Search apps and files...")
+		_sm_search_txt:setColor(fr,fg_,fb,fa)
+		_sm_search_txt:setPosition((px)*CW, (row-1)*CH)
+		row = row + 2
+
+		-- Pinned header
+		_sm_pinned_hdr:setVisible(true)
+		_sm_pinned_hdr:setText("── Pinned (groups) ──")
+		_sm_pinned_hdr:setColor(hr,hg,hb,ha)
+		_sm_pinned_hdr:setPosition((px)*CW, (row-1)*CH)
+		row = row + 1
+
+		local groups = startmenu.load()
+		local tile_w, gap = 14, 1
+		local icon_rows = 4
+		local tile_h = icon_rows + 1
+		local cols = math.max(2, math.floor((pw - 3) / (tile_w + gap)))
+
+		local ti = 0   -- tile pool index
+		local gi = 0   -- group name index
+		_sm_tile_data = {}
+
+		for _, g in ipairs(groups) do
+			if row >= py + ph - 8 then break end
+			gi = gi + 1
+			local grp_t = _sm_grp_names[gi]
+			if grp_t then
+				grp_t:setVisible(true)
+				grp_t:setText(g.name)
+				grp_t:setColor(hr,hg,hb,ha)
+				grp_t:setPosition((px)*CW, (row-1)*CH)
+			end
+			row = row + 1
+			local col = 0
+			for _, id in ipairs(g.ids) do
+				local meta = startmenu.registry[id]
+				if meta and row + tile_h <= py + ph - 6 then
+					ti = ti + 1
+					local tb = _sm_tiles[ti]
+					if tb then
+						local tx = px + 2 + col * (tile_w + gap)
+						tb:setVisible(true)
+						tb:setPosition((tx-1)*CW, (row-1)*CH)
+						tb:setSize(tile_w*CW, tile_h*CH)
+						tb:setNormalColor(C(22))
+						tb:setLabel("")  -- icon text drawn as overlay
+						local cap_id = id
+						tb:setOnPress(function()
+							UI.start_open = false
+							UI.launch_app(cap_id)
+						end)
+						-- store icon overlay data
+						local iw = tile_w - 2
+						local raw = startmenu.icon_lines(meta)
+						while #raw > icon_rows do table.remove(raw) end
+						local blank = string.rep(" ", iw)
+						local top = math.floor((icon_rows - #raw) / 2)
+						local block = {}
+						for _ = 1, top do block[#block+1] = blank end
+						for j = 1, #raw do
+							block[#block+1] = raw[j] .. string.rep(" ", math.max(0, iw - #raw[j]))
+						end
+						while #block < icon_rows do block[#block+1] = blank end
+						_sm_tile_data[ti] = {
+							tx = tx, row = row,
+							tile_w = tile_w, nrows = icon_rows,
+							block = block, meta = meta,
+						}
+					end
+					col = col + 1
+					if col >= cols then
+						col = 0
+						row = row + tile_h + 1
+					end
+				end
+			end
+			if col > 0 then row = row + tile_h + 1 end
+			row = row + 1
+		end
+
+		-- Hide unused tile pool entries
+		for j = ti + 1, _SM_MAX_TILES do
+			if _sm_tiles[j] then _sm_tiles[j]:setVisible(false) end
+		end
+		for j = gi + 1, _SM_MAX_GROUPS do
+			if _sm_grp_names[j] then _sm_grp_names[j]:setVisible(false) end
+		end
+
+		-- All apps header
+		_sm_allapps_hdr:setVisible(true)
+		_sm_allapps_hdr:setText("── All apps ──")
+		_sm_allapps_hdr:setColor(hr,hg,hb,ha)
+		_sm_allapps_hdr:setPosition((px)*CW, (row-1)*CH)
+		row = row + 1
+
+		local ai = 0
+		for _, id in ipairs(startmenu.all_app_ids()) do
+			if row >= py + ph - 3 then break end
+			local meta = startmenu.registry[id]
+			if meta then
+				ai = ai + 1
+				local mark = (startmenu.icon_lines(meta)[1] or "?"):sub(1, 8)
+				local ifg, ibg = gfx_icon_row_style(meta, 1, panel_fg_tok, panel_bg_tok, false)
+				local ic_t = _sm_app_icon[ai]
+				local lb_t = _sm_app_label[ai]
+				if ic_t and lb_t then
+					ic_t:setVisible(true)
+					ic_t:setText(mark)
+					ic_t:setColor(C(ifg))
+					ic_t:setPosition((px+1)*CW, (row-1)*CH)
+					lb_t:setVisible(true)
+					lb_t:setText("  " .. meta.label .. "  (" .. id .. ")")
+					lb_t:setColor(fr,fg_,fb,fa)
+					lb_t:setPosition((px+1+#mark)*CW, (row-1)*CH)
+				end
+				row = row + 1
+			end
+		end
+		for j = ai + 1, _SM_MAX_APPS do
+			if _sm_app_icon[j] then _sm_app_icon[j]:setVisible(false) end
+			if _sm_app_label[j] then _sm_app_label[j]:setVisible(false) end
+		end
+
+		-- Footer
+		_sm_footer_txt:setVisible(true)
+		_sm_footer_txt:setText("pin user apps only  find|search <text>")
+		_sm_footer_txt:setColor(hr,hg,hb,ha)
+		_sm_footer_txt:setPosition((px)*CW, (py + ph - 2 - 1)*CH)
+	end)
+
+	_sm_mgr = mgr ; _sm_panel = panel
+	_sm_search_txt = search_t ; _sm_pinned_hdr = pinned_hdr
+	_sm_grp_names = grp_names ; _sm_tiles = tiles
+	_sm_allapps_hdr = allapps_hdr
+	_sm_app_icon = app_icons ; _sm_app_label = app_labels
+	_sm_footer_txt = footer
+end
 
 local function settings_ctx()
 	return {
@@ -3509,174 +3931,81 @@ function UI.handle_event(e)
 end
 
 function UI.draw_taskbar()
-	local t = atlastheme.load()
+	local t  = atlastheme.load()
 	local tb = t.mode == "dark" and "black" or 22
 	local fg = "bright_white"
-	local y0 = UI.H - UI.TASKBAR_H + 1
-	local th = UI.TASKBAR_H
-	local y_icon = y0
-	local y_dock = y0 + th - 1
-	draw.fillRect(1, y0, UI.W, th, tb)
 
-	local slots, search_w, settings_x = UI.taskbar_slots_visible()
-	local trash_x = UI.W - 19
+	-- Rebuild gui_lib components when canvas dimensions or taskbar height change.
+	local key = tostring(UI.W) .. ":" .. tostring(UI.H) .. ":" .. tostring(UI.TASKBAR_H)
+	if not _tb_mgr or _tb_key ~= key then
+		build_taskbar_gui()
+		_tb_key = key
+	end
+
+	-- Clamp slot selection before the layout callback reads UI.taskbar_sel.
+	local slots = UI.taskbar_slots_visible()
 	if UI.taskbar_sel > #slots then UI.taskbar_sel = math.max(1, #slots) end
 
-	local x = 2
-	local start_h = (th >= 3) and 2 or th
-	if UI.start_open then
-		draw.fillRect(x, y0, 4, start_h, 28)
-	end
-	draw.text(x + 1, y_icon, "[", fg, tb)
-	draw.text(x + 2, y_icon, "S", fg, tb)
-	draw.text(x + 3, y_icon, "]", fg, tb)
-	x = 7
+	-- Render bg strip, slot highlight panels, status / clock / world text.
+	-- Assumption: gui_lib.GUIManager:draw() issues gfx_2d.rect/text calls without
+	-- managing its own clear or batch — it therefore composites correctly inside the
+	-- draw.begin_frame() / draw.end_frame() batch started by UI.redraw().
+	_tb_mgr:update(0)
+	_tb_mgr:draw()
 
-	local sw = search_w
+	-- Overlay: start-button characters on top of start panel (no bg rect needed).
+	local y0 = _tb_y0
+	draw.text(3, y0, "[", fg, nil)
+	draw.text(4, y0, "S", fg, nil)
+	draw.text(5, y0, "]", fg, nil)
+
+	-- Overlay: per-slot icon rows (multi-row, per-row colours via draw.text).
+	for _, d in ipairs(_tb_icon_data) do
+		if d.meta then
+			for i = 1, d.nrows do
+				local L   = d.lines[i] or ""
+				local pad = math.max(0, math.floor((d.slot_w - #L) / 2))
+				local ifg, ibg = gfx_icon_row_style(d.meta, i, fg, tb, d.sel)
+				draw.text(d.sx + pad, d.y_icon + i - 1, L, ifg, ibg)
+			end
+		end
+	end
+
+	-- Overlay: search bar content (external API draws into the search region).
 	UI.search_api().draw_taskbar(draw, {
-		x = x,
-		y0 = y0,
-		sw = sw,
-		th = th,
-		tb = tb,
-		fg = fg,
+		x      = 7,
+		y0     = y0,
+		sw     = _tb_search_w,
+		th     = UI.TASKBAR_H,
+		tb     = tb,
+		fg     = fg,
 		accent = 28,
 	})
-
-	x = 7 + sw + 1
-	local si = 0
-	local slot_w = 6
-	local step = startmenu.taskbar_icon_step()
-	local function draw_slot_at(sx, id)
-		si = si + 1
-		local m = startmenu.registry[id]
-		if not m then return end
-		local lines, nrows = startmenu.icon_taskbar_lines(m, th)
-		local sel = (si == UI.taskbar_sel)
-		if sel then
-			draw.fillRect(sx, y_icon, slot_w, nrows, 28)
-		end
-		for i = 1, nrows do
-			local L = lines[i] or ""
-			local pad = math.max(0, math.floor((slot_w - #L) / 2))
-			local ifg, ibg = gfx_icon_row_style(m, i, fg, tb, sel)
-			draw.text(sx + pad, y_icon + i - 1, L, ifg, ibg)
-		end
-	end
-
-	for _, id in ipairs(startmenu.TASKBAR_LEFT) do
-		draw_slot_at(x, id)
-		x = x + step
-	end
-	for _, id in ipairs(startmenu.flatten_user_pins(14)) do
-		if x + step > settings_x - 2 then break end
-		draw_slot_at(x, id)
-		x = x + step
-	end
-	for i, id in ipairs(startmenu.TASKBAR_RIGHT) do
-		local sx = (i == 1) and settings_x or trash_x
-		draw_slot_at(sx, id)
-	end
-
-	if th >= 3 then
-		local gap_x = 7 + sw + 1
-		local gap_w = settings_x - gap_x - 1
-		if gap_w >= 12 then
-			local status_txt = deskutil.taskbar_status_line(gap_w)
-			draw.text(gap_x + math.max(0, math.floor((gap_w - #status_txt) / 2)), y0 + 1, status_txt, 28, tb)
-		elseif gap_w >= 7 then
-			local lab = "AtlasOS"
-			draw.text(gap_x + math.max(0, math.floor((gap_w - #lab) / 2)), y0 + 1, lab, 28, tb)
-		end
-	end
-
-	local dt = deskutil.dock_datetime_str()
-	local world = deskutil.dock_world_line()
-	draw.text(UI.W - #dt, y_dock, dt, 28, tb)
-	local room = UI.W - #dt - 4
-	if room >= 8 then
-		local wline = world
-		if #wline > room then wline = wline:sub(1, room - 1) .. "…" end
-		draw.text(2, y_dock, wline, 28, tb)
-	end
 end
 
 function UI.draw_start_menu()
 	if not UI.start_open then return end
-	local th = UI.TASKBAR_H
-	local pw = math.min(50, math.max(36, math.floor(UI.W * 0.52)))
-	local ph = math.min(UI.H - th - 2, math.max(14, math.floor(UI.H * 0.68)))
-	local py = UI.H - th - ph + 1
-	local px = 2
-	local panel_bg = atlastheme.load().mode == "dark" and "black" or "white"
-	local panel_fg = atlastheme.load().mode == "dark" and "white" or "black"
-	draw.fillRect(px, py, pw, ph, panel_bg)
-	draw.rect(px, py, pw, ph, 22)
-	local row = py + 1
-	draw.text(px + 1, row, " Search apps and files...", panel_fg, panel_bg)
-	row = row + 2
-	draw.text(px + 1, row, "── Pinned (groups) ──", 22, panel_bg)
-	row = row + 1
-	local groups = startmenu.load()
-	local tile_w, gap = 14, 1
-	local icon_rows = 4
-	local tile_h = icon_rows + 1
-	local cols = math.max(2, math.floor((pw - 3) / (tile_w + gap)))
-	local function tile_icon_block(meta, max_w, nrows)
-		local raw = startmenu.icon_lines(meta)
-		while #raw > nrows do table.remove(raw) end
-		for i = 1, #raw do
-			if #raw[i] > max_w then raw[i] = raw[i]:sub(1, max_w) end
+	local sm_key = UI.W .. ":" .. UI.H .. ":" .. UI.TASKBAR_H
+	if _sm_mgr == nil or _sm_key ~= sm_key then
+		build_start_menu_gui()
+		_sm_key = sm_key
+	end
+	_sm_mgr:update(0)
+	_sm_mgr:draw()
+	-- Icon text overlays (same as taskbar: multi-row multi-color can't be pure Text component)
+	for _, d in ipairs(_sm_tile_data) do
+		local iw = d.tile_w - 2
+		for r = 1, d.nrows do
+			local ifg, ibg = gfx_icon_row_style(d.meta, r, "bright_white", 22, false)
+			draw.text(d.tx + 1, d.row + r - 1, d.block[r], ifg, ibg)
 		end
-		local blank = string.rep(" ", max_w)
-		local top = math.floor((nrows - #raw) / 2)
-		local out = {}
-		for _ = 1, top do out[#out + 1] = blank end
-		for i = 1, #raw do out[#out + 1] = raw[i] .. string.rep(" ", max_w - #raw[i]) end
-		while #out < nrows do out[#out + 1] = blank end
-		return out
+		-- label row below icon
+		local lab = d.meta.label:sub(1, iw)
+		local t = atlastheme.load()
+		local panel_fg = t.mode == "dark" and "white" or "black"
+		local panel_bg = t.mode == "dark" and "black" or "white"
+		draw.text(d.tx + 1, d.row + d.nrows, lab .. string.rep(" ", iw - #lab), panel_fg, panel_bg)
 	end
-	for _, g in ipairs(groups) do
-		if row >= py + ph - 8 then break end
-		draw.text(px + 1, row, g.name, 28, panel_bg)
-		row = row + 1
-		local col = 0
-		for _, id in ipairs(g.ids) do
-			local m = startmenu.registry[id]
-			if m and row + tile_h <= py + ph - 6 then
-				local tx = px + 2 + col * (tile_w + gap)
-				local iw = tile_w - 2
-				draw.fillRect(tx, row, tile_w, tile_h, 22)
-				local block = tile_icon_block(m, iw, icon_rows)
-				for r = 1, icon_rows do
-					local ifg, ibg = gfx_icon_row_style(m, r, "bright_white", 22, false)
-					draw.text(tx + 1, row + r - 1, block[r], ifg, ibg)
-				end
-				local lab = m.label:sub(1, iw)
-				draw.text(tx + 1, row + icon_rows, lab .. string.rep(" ", iw - #lab), panel_fg, panel_bg)
-				col = col + 1
-				if col >= cols then
-					col = 0
-					row = row + tile_h + 1
-				end
-			end
-		end
-		if col > 0 then row = row + tile_h + 1 end
-		row = row + 1
-	end
-	draw.text(px + 1, row, "── All apps ──", 22, panel_bg)
-	row = row + 1
-	for _, id in ipairs(startmenu.all_app_ids()) do
-		if row >= py + ph - 3 then break end
-		local m = startmenu.registry[id]
-		local mark = (startmenu.icon_lines(m)[1] or "?"):sub(1, 8)
-		local mx = px + 2
-		local ifg, ibg = gfx_icon_row_style(m, 1, panel_fg, panel_bg, false)
-		draw.text(mx, row, mark, ifg, ibg)
-		draw.text(mx + #mark, row, "  " .. m.label .. "  (" .. id .. ")", panel_fg, panel_bg)
-		row = row + 1
-	end
-	draw.text(px + 1, py + ph - 2, "pin user apps only  find|search <text>", 28, panel_bg)
 end
 
 function UI.draw_activities_overlay()
@@ -6584,7 +6913,13 @@ return widgets
 ]]
 
 local draw = dofile("/home/lib/atlas_draw.lua")
+local atlas_color = dofile("/home/lib/atlas_color.lua")
 local window = {}
+
+-- Pixel conversion helpers (cell coords are 1-based, pixel coords are 0-based)
+local CW = draw.cell_w
+local CH = draw.cell_h
+local function C(token) return atlas_color.resolve(token) end
 
 local function clamp_title(s, maxLen)
   s = tostring(s or "")
@@ -6630,27 +6965,99 @@ local function title_btn_count(w)
   return 1
 end
 
+-- ── Window Chrome GUI (Phase 2.4) ───────────────────────────────────────────
+--- Build gui_lib components for a window's chrome (bg, border, title, buttons, client area).
+local function build_win_gui(win)
+  local P = gui_lib.Panel
+  local T = gui_lib.Text
+  local B = gui_lib.Button
+  local mgr = gui_lib.GUIManager.new()
+  mgr:setBackgroundColor(0, 0, 0, 0)
+
+  local chrome = P.new(0, 0, 0, 0)
+  local titlebar = P.new(0, 0, 0, 0)
+  titlebar:setBorderColor(0, 0, 0, 0)
+  local title_txt = T.new(0, 0, "")
+  title_txt:setScale(1)
+  local btn_close = B.new(0, 0, 0, 0, "x", function() end)
+  local btn_max = B.new(0, 0, 0, 0, "v", function() end)
+  local btn_min = B.new(0, 0, 0, 0, "_", function() end)
+  local client = P.new(0, 0, 0, 0)
+  client:setBorderColor(0, 0, 0, 0)
+
+  mgr:addComponent(chrome)
+  mgr:addComponent(titlebar)
+  mgr:addComponent(title_txt)
+  mgr:addComponent(btn_close)
+  mgr:addComponent(btn_max)
+  mgr:addComponent(btn_min)
+  mgr:addComponent(client)
+
+  mgr:setLayoutCallback(function(m, _pw, _ph)
+    local x, y, w, h = win.x, win.y, win.w, win.h
+    local btn = title_btn_count(w)
+    local tmax = math.max(1, w - 4 - btn)
+    local prefix = win.focused and "*" or " "
+
+    chrome:setPosition((x-1)*CW, (y-1)*CH)
+    chrome:setSize(w*CW, h*CH)
+    chrome:setBackgroundColor(C(win.body_bg))
+    chrome:setBorderColor(C(win.body_fg))
+
+    titlebar:setPosition(x*CW, y*CH)
+    titlebar:setSize((w-2)*CW, CH)
+    titlebar:setBackgroundColor(C(win.title_bg))
+
+    title_txt:setText(prefix .. clamp_title(win.title, tmax))
+    title_txt:setColor(C(win.title_fg))
+    title_txt:setPosition((x+1)*CW, y*CH)
+
+    btn_close:setPosition((x+w-3)*CW, y*CH)
+    btn_close:setSize(CW, CH)
+    btn_close:setLabel("x")
+    btn_close:setNormalColor(C(win.title_bg))
+
+    if btn >= 2 then
+      btn_max:setVisible(true)
+      btn_max:setPosition((x+w-4)*CW, y*CH)
+      btn_max:setSize(CW, CH)
+      btn_max:setLabel(win.maximized and "v" or "^")
+      btn_max:setNormalColor(C(win.title_bg))
+    else
+      btn_max:setVisible(false)
+    end
+
+    if btn >= 3 then
+      btn_min:setVisible(true)
+      btn_min:setPosition((x+w-5)*CW, y*CH)
+      btn_min:setSize(CW, CH)
+      btn_min:setLabel("_")
+      btn_min:setNormalColor(C(win.title_bg))
+    else
+      btn_min:setVisible(false)
+    end
+
+    local cw, ch = win:client_w(), win:client_h()
+    if cw >= 1 and ch >= 1 then
+      client:setVisible(true)
+      client:setPosition(x*CW, (y+1)*CH)
+      client:setSize(cw*CW, ch*CH)
+      client:setBackgroundColor(C(win.client_bg))
+    else
+      client:setVisible(false)
+    end
+  end)
+
+  win._win_mgr = mgr
+end
+
 function Win:paint()
   if self.minimized then return end
-  local x, y, w, h = self.x, self.y, self.w, self.h
-  draw.fillRect(x, y, w, h, self.body_bg)
-  draw.rect(x, y, w, h, self.body_fg)
-  draw.fillRect(x + 1, y + 1, w - 2, 1, self.title_bg)
-  local btn = title_btn_count(w)
-  local tmax = math.max(1, w - 4 - btn)
-  local title_prefix = self.focused and "*" or " "
-  draw.text(x + 2, y + 1, title_prefix .. clamp_title(self.title, tmax), self.title_fg, self.title_bg)
-  if btn >= 3 then
-    draw.text(x + w - 4, y + 1, "_", self.title_fg, self.title_bg)
+  if not self._win_mgr then
+    build_win_gui(self)
   end
-  if btn >= 2 then
-    draw.text(x + w - 3, y + 1, self.maximized and "v" or "^", self.title_fg, self.title_bg)
-  end
-  draw.text(x + w - 2, y + 1, "x", self.title_fg, self.title_bg)
-  local cw, ch = self:client_w(), self:client_h()
-  if cw >= 1 and ch >= 1 then
-    draw.fillRect(self:client_x(), self:client_y(), cw, ch, self.client_bg)
-  end
+  self._win_mgr:update(0)
+  self._win_mgr:draw()
 end
 
 --- Hit on title bar / frame. Returns "close"|"max"|"min"|"drag"|"client"|nil (nil = outside).
@@ -6747,9 +7154,15 @@ function window.Desktop.add(d, win)
   end
 end
 
+--- Clean up gui_lib components for a window (called on window removal).
+function window.win_gui_cleanup(win)
+  win._win_mgr = nil
+end
+
 function window.Desktop.remove(d, win)
   local i = index_of(d._windows, win)
   if not i then return false end
+  window.win_gui_cleanup(win)  -- Clean up gui_lib components before removal
   table.remove(d._windows, i)
   if d._focus == win then
     d._focus = d._windows[math.min(i, #d._windows)] or d._windows[#d._windows]
