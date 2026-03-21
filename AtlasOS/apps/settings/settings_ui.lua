@@ -9,6 +9,12 @@ if not factory then
   local atlastheme = ctx.atlastheme
   local VERSION = ctx.VERSION or "0"
   local appkit = dofile("/home/lib/appkit.lua")
+  local draw = dofile("/home/lib/atlas_draw.lua")
+  local atlas_color = dofile("/home/lib/atlas_color.lua")
+
+  local CW = draw.cell_w
+  local CH = draw.cell_h
+  local function C(token) return atlas_color.resolve(token) end
 
   local CATS = {
     { id = "system", label = "System" },
@@ -21,6 +27,102 @@ if not factory then
   local view_items = {}
   for _, c in ipairs(CATS) do
     view_items[#view_items + 1] = { label = c.label, id = "cat:" .. c.id }
+  end
+
+  -- Module-level persistent state for gui_lib components
+  local _sg_mgr, _sg_key, _sg_win, _sg_yB, _sg_btn_data, _sg_div = nil, nil, nil, 0, {}, {}
+  local _sg_cat_panels, _sg_cat_texts, _sg_abtns = {}, {}, {}
+
+  local function build_settings_gui()
+    local P = gui_lib.Panel
+    local T = gui_lib.Text
+    local B = gui_lib.Button
+    local mgr = gui_lib.GUIManager.new()
+    mgr:setBackgroundColor(0, 0, 0, 0)
+
+    _sg_cat_panels = {}
+    _sg_cat_texts = {}
+    for i = 1, #CATS do
+      _sg_cat_panels[i] = P.new(0, 0, 0, 0)
+      _sg_cat_panels[i]:setBorderColor(0, 0, 0, 0)
+      mgr:addComponent(_sg_cat_panels[i])
+
+      _sg_cat_texts[i] = T.new(0, 0, "")
+      _sg_cat_texts[i]:setScale(1)
+      mgr:addComponent(_sg_cat_texts[i])
+    end
+
+    _sg_abtns = {}
+    for i = 1, 4 do
+      _sg_abtns[i] = B.new(0, 0, 0, 0, "", function() end)
+      mgr:addComponent(_sg_abtns[i])
+    end
+
+    mgr:setLayoutCallback(function(m, _pw, _ph)
+      local win = _sg_win
+      if not win then return end
+      local yB = _sg_yB
+
+      -- Position category sidebar
+      local cw, ch = win:client_w(), win:client_h()
+      local LW = math.max(12, math.min(20, math.floor(cw * 0.32)))
+      if cw - LW - 2 < 14 then
+        LW = math.max(10, cw - 16)
+      end
+      local cx = win:client_x()
+      local cy = win:client_y()
+      local DIV = LW
+
+      _sg_div = { x = (cx + DIV) * CW, y1 = (cy + yB) * CH, y2 = (cy + ch - 1) * CH }
+
+      local row = yB + 2
+      for i, c in ipairs(CATS) do
+        if row >= ch - 1 then
+          _sg_cat_panels[i]:setVisible(false)
+          _sg_cat_texts[i]:setVisible(false)
+        else
+          local sel = (UI._settings_cat == c.id)
+          _sg_cat_panels[i]:setVisible(sel)
+          if sel then
+            _sg_cat_panels[i]:setPosition(cx * CW, (cy + row) * CH)
+            _sg_cat_panels[i]:setSize(LW * CW, CH)
+            _sg_cat_panels[i]:setBackgroundColor(C("bright_white"))
+          end
+
+          local lfg = sel and "black" or win.client_fg
+          local text_str = c.label
+          _sg_cat_texts[i]:setText(text_str)
+          _sg_cat_texts[i]:setColor(C(lfg))
+          if sel then
+            _sg_cat_texts[i]:setBackgroundColor(C("bright_white"))
+          else
+            _sg_cat_texts[i]:setBackgroundColor(C(win.client_bg))
+          end
+          _sg_cat_texts[i]:setPosition((cx + 1) * CW, (cy + row) * CH)
+          _sg_cat_texts[i]:setVisible(true)
+          row = row + 1
+        end
+      end
+
+      -- Position action buttons from _sg_btn_data
+      for i = 1, 4 do
+        if i <= #_sg_btn_data then
+          local bd = _sg_btn_data[i]
+          _sg_abtns[i]:setVisible(true)
+          _sg_abtns[i]:setPosition((cx + bd.col) * CW, (cy + bd.row) * CH)
+          _sg_abtns[i]:setSize(bd.w * CW, CH)
+          _sg_abtns[i]:setLabel(bd.label)
+          _sg_abtns[i]:setNormalColor(C(win.client_bg))
+          _sg_abtns[i]:setOnPress(function()
+            UI.settings_dispatch(bd.tag)
+          end)
+        else
+          _sg_abtns[i]:setVisible(false)
+        end
+      end
+    end)
+
+    _sg_mgr = mgr
   end
 
   local shell = appkit.shell({
@@ -44,7 +146,6 @@ if not factory then
   })
 
   return function(win)
-    local draw = dofile("/home/lib/atlas_draw.lua")
     if not UI._settings_cat then UI._settings_cat = "system" end
     UI._settings_zones = {}
 
@@ -76,28 +177,27 @@ if not factory then
       RW = cw - R0
     end
 
-    local cx0, cy0 = win:client_x(), win:client_y()
-
-    for r = yB, ch - 1 do
-      draw.text(cx0 + DIV, cy0 + r, "│", win.client_fg, win.client_bg)
-    end
-
     window.draw_text_line(win, 1, yB, "Settings", "bright_white")
 
     local row = yB + 2
     for _, c in ipairs(CATS) do
       if row >= ch - 1 then break end
-      local sel = (UI._settings_cat == c.id)
-      local lfg = sel and "black" or win.client_fg
-      local lbg = sel and "bright_white" or win.client_bg
-      if sel then draw.fillRect(cx0, cy0 + row, LW, 1, "bright_white") end
-      local line = (sel and "│ " or "  ") .. c.label
-      line = line .. string.rep(" ", math.max(0, LW - #line))
-      if #line > LW then line = line:sub(1, LW) end
-      draw.text(cx0, cy0 + row, line, lfg, lbg)
       add_zone(0, row, LW - 1, row, "cat:" .. c.id)
       row = row + 1
     end
+
+    -- Set upvalues for layout callback
+    _sg_win = win
+    _sg_yB = yB
+
+    -- Rebuild if needed
+    local sg_key = cw .. ":" .. ch .. ":" .. yB
+    if _sg_mgr == nil or _sg_key ~= sg_key then
+      build_settings_gui()
+      _sg_key = sg_key
+    end
+
+    _sg_btn_data = {}
 
     local cat = UI._settings_cat
     local rr = yB + 1
@@ -118,7 +218,7 @@ if not factory then
 
     local function btn(col, row, w, label, tag)
       if row >= ch - 1 then return end
-      widgets.button(win, col, row, w, label)
+      table.insert(_sg_btn_data, { col = col, row = row, w = w, label = label, tag = tag })
       add_zone(col, row, col + w - 1, row, tag)
     end
 
@@ -173,6 +273,17 @@ if not factory then
       ln("")
       btn(R0, rr, 18, "[ Save layout ]", "cmd:save_layout")
     end
+
+    -- Render sidebar gui_lib components
+    _sg_mgr:update(0)
+
+    -- Draw vertical divider line
+    if _sg_div and _sg_div.x then
+      local r, g, b, a = C(win.client_fg)
+      gfx_2d.line(_sg_div.x, _sg_div.y1, _sg_div.x, _sg_div.y2, r, g, b, a)
+    end
+
+    _sg_mgr:draw()
 
     shell:paint_dropdown(win)
   end
