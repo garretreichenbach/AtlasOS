@@ -18,6 +18,7 @@ local input = dofile("/home/lib/input.lua")
 local startmenu = _G.startmenu or dofile("/home/lib/startmenu.lua")
 _G.startmenu = startmenu
 local draw = dofile("/home/lib/atlas_draw.lua")
+local atlas_color = dofile("/home/lib/atlas_color.lua")
 local appkit = dofile("/home/lib/appkit.lua")
 local paths = dofile("/home/lib/desktop_paths.lua")
 local deskutil = dofile("/home/lib/desktop_util.lua")
@@ -83,6 +84,179 @@ local UI = {
 	_drag = nil,
 	_min_strip = {},
 }
+
+-- ── Taskbar GUI (Phase 2.2) ─────────────────────────────────────────────────
+-- Cell→pixel helpers (match atlas_draw CELL_W=8, CELL_H=10)
+local CW, CH = draw.cell_w, draw.cell_h
+local function C(token) return atlas_color.resolve(token) end
+
+-- Persistent gui_lib components for the taskbar strip.
+-- Assumption: gui_lib.GUIManager:draw() issues gfx_2d.rect/text calls without
+-- managing its own clear/batch cycle, so it can be called inside the existing
+-- draw.begin_frame() / draw.end_frame() batch in UI.redraw().
+local _TB_POOL      = 24
+local _tb_mgr       = nil
+local _tb_key       = nil    -- "W:H:TASKBAR_H" — rebuild on canvas change
+local _tb_bg        = nil    -- Panel: full taskbar bg strip
+local _tb_start     = nil    -- Panel: start-button zone
+local _tb_slot_pool = {}     -- Panels: one per app slot (pooled)
+local _tb_status    = nil    -- Text: centre status line (row 2 when th >= 3)
+local _tb_clock     = nil    -- Text: clock / date (dock row, right-aligned)
+local _tb_world     = nil    -- Text: world / entity line (dock row, left)
+-- Per-slot icon rendering data, populated by the layout callback each frame:
+local _tb_icon_data = {}     -- [i] = {sx, y_icon, slot_w, nrows, lines, sel, meta}
+local _tb_search_w  = 0      -- search bar width (cells), needed by search API call
+local _tb_y0        = 1      -- taskbar top row (1-based cells)
+
+local function build_taskbar_gui()
+	local P   = gui_lib.Panel
+	local T   = gui_lib.Text
+	local mgr = gui_lib.GUIManager.new()
+	-- Transparent bg: draw.begin_frame() handles the canvas clear; mgr should
+	-- not fill the whole canvas, only its component panels.
+	mgr:setBackgroundColor(0, 0, 0, 0)
+
+	local bg = P.new(0, 0, 0, 0)
+	bg:setBorderColor(0, 0, 0, 0)
+	mgr:addComponent(bg)
+
+	local start_p = P.new(0, 0, 0, 0)
+	start_p:setBorderColor(0, 0, 0, 0)
+	mgr:addComponent(start_p)
+
+	local pool = {}
+	for i = 1, _TB_POOL do
+		local sp = P.new(0, 0, 0, 0)
+		sp:setBorderColor(0, 0, 0, 0)
+		sp:setVisible(false)
+		mgr:addComponent(sp)
+		pool[i] = sp
+	end
+
+	local st_txt = T.new(0, 0, "")
+	local ck_txt = T.new(0, 0, "")
+	local wd_txt = T.new(0, 0, "")
+	st_txt:setScale(1)
+	ck_txt:setScale(1)
+	wd_txt:setScale(1)
+	mgr:addComponent(st_txt)
+	mgr:addComponent(ck_txt)
+	mgr:addComponent(wd_txt)
+
+	mgr:setLayoutCallback(function(m, _pw, _ph)
+		local t    = atlastheme.load()
+		local tb   = t.mode == "dark" and "black" or 22
+		local W, H, TH = UI.W, UI.H, UI.TASKBAR_H
+		local y0   = H - TH + 1
+		local py0  = (y0 - 1) * CH
+		local ph_tb = TH * CH
+		_tb_y0 = y0
+
+		-- Background strip
+		bg:setPosition(0, py0)
+		bg:setSize(W * CW, ph_tb)
+		bg:setBackgroundColor(C(tb))
+
+		-- Start button area (cells x=2..5)
+		local start_h = (TH >= 3) and 2 or TH
+		start_p:setPosition(1 * CW, py0)     -- cell 2 → pixel x = 1*CW
+		start_p:setSize(4 * CW, start_h * CH)
+		start_p:setBackgroundColor(C(UI.start_open and 28 or tb))
+
+		-- App slot panels
+		local slots, search_w, settings_x = UI.taskbar_slots_visible()
+		local trash_x = W - 19
+		local step    = startmenu.taskbar_icon_step()
+		local slot_w  = 6
+		_tb_search_w  = search_w
+		_tb_icon_data = {}
+		local si = 0
+		for i, id in ipairs(slots) do
+			si = si + 1
+			local sx
+			if i <= #slots - 2 then
+				sx = 7 + search_w + 1 + (i - 1) * step
+			elseif i == #slots - 1 then
+				sx = settings_x
+			else
+				sx = trash_x
+			end
+			local sp = pool[si]
+			if sp then
+				sp:setVisible(true)
+				sp:setPosition((sx - 1) * CW, py0)
+				sp:setSize(slot_w * CW, TH * CH)
+				local sel = (si == UI.taskbar_sel)
+				sp:setBackgroundColor(C(sel and 28 or tb))
+				sp:setBorderColor(0, 0, 0, 0)
+				local meta = startmenu.registry[id]
+				local lines, nrows = {}, 1
+				if meta then
+					lines, nrows = startmenu.icon_taskbar_lines(meta, TH)
+				end
+				_tb_icon_data[si] = {
+					sx = sx, y_icon = y0,
+					slot_w = slot_w, nrows = nrows,
+					lines = lines, sel = sel, meta = meta,
+				}
+			end
+		end
+		for j = si + 1, _TB_POOL do
+			if pool[j] then pool[j]:setVisible(false) end
+		end
+
+		-- Centre status line (second row when th >= 3)
+		if TH >= 3 then
+			local gap_x = 7 + search_w + 1
+			local gap_w = settings_x - gap_x - 1
+			if gap_w >= 7 then
+				local s = deskutil.taskbar_status_line(gap_w)
+				if s == "" then s = "AtlasOS" end
+				st_txt:setVisible(true)
+				st_txt:setText(s)
+				st_txt:setColor(C(28))
+				st_txt:setPosition((gap_x - 1) * CW, py0 + CH)
+				st_txt:setSize(gap_w * CW, CH)
+			else
+				st_txt:setVisible(false)
+			end
+		else
+			st_txt:setVisible(false)
+		end
+
+		-- Clock (dock row, right-aligned)
+		local dt     = deskutil.dock_datetime_str()
+		local y_dock = y0 + TH - 1
+		local py_d   = (y_dock - 1) * CH
+		ck_txt:setText(dt)
+		ck_txt:setColor(C(28))
+		ck_txt:setPosition((W - #dt - 1) * CW, py_d)
+		ck_txt:setSize(#dt * CW, CH)
+
+		-- World / entity line (dock row, left)
+		local world = deskutil.dock_world_line()
+		local room  = W - #dt - 4
+		if room >= 8 then
+			local wl = world
+			if #wl > room then wl = wl:sub(1, room - 1) .. "…" end
+			wd_txt:setVisible(true)
+			wd_txt:setText(wl)
+			wd_txt:setColor(C(28))
+			wd_txt:setPosition(1 * CW, py_d)   -- cell 2 → pixel 8
+			wd_txt:setSize(room * CW, CH)
+		else
+			wd_txt:setVisible(false)
+		end
+	end)
+
+	_tb_mgr       = mgr
+	_tb_bg        = bg
+	_tb_start     = start_p
+	_tb_slot_pool = pool
+	_tb_status    = st_txt
+	_tb_clock     = ck_txt
+	_tb_world     = wd_txt
+end
 
 local function settings_ctx()
 	return {
@@ -878,96 +1052,56 @@ function UI.handle_event(e)
 end
 
 function UI.draw_taskbar()
-	local t = atlastheme.load()
+	local t  = atlastheme.load()
 	local tb = t.mode == "dark" and "black" or 22
 	local fg = "bright_white"
-	local y0 = UI.H - UI.TASKBAR_H + 1
-	local th = UI.TASKBAR_H
-	local y_icon = y0
-	local y_dock = y0 + th - 1
-	draw.fillRect(1, y0, UI.W, th, tb)
 
-	local slots, search_w, settings_x = UI.taskbar_slots_visible()
-	local trash_x = UI.W - 19
+	-- Rebuild gui_lib components when canvas dimensions or taskbar height change.
+	local key = tostring(UI.W) .. ":" .. tostring(UI.H) .. ":" .. tostring(UI.TASKBAR_H)
+	if not _tb_mgr or _tb_key ~= key then
+		build_taskbar_gui()
+		_tb_key = key
+	end
+
+	-- Clamp slot selection before the layout callback reads UI.taskbar_sel.
+	local slots = UI.taskbar_slots_visible()
 	if UI.taskbar_sel > #slots then UI.taskbar_sel = math.max(1, #slots) end
 
-	local x = 2
-	local start_h = (th >= 3) and 2 or th
-	if UI.start_open then
-		draw.fillRect(x, y0, 4, start_h, 28)
-	end
-	draw.text(x + 1, y_icon, "[", fg, tb)
-	draw.text(x + 2, y_icon, "S", fg, tb)
-	draw.text(x + 3, y_icon, "]", fg, tb)
-	x = 7
+	-- Render bg strip, slot highlight panels, status / clock / world text.
+	-- Assumption: gui_lib.GUIManager:draw() issues gfx_2d.rect/text calls without
+	-- managing its own clear or batch — it therefore composites correctly inside the
+	-- draw.begin_frame() / draw.end_frame() batch started by UI.redraw().
+	_tb_mgr:update(0)
+	_tb_mgr:draw()
 
-	local sw = search_w
+	-- Overlay: start-button characters on top of start panel (no bg rect needed).
+	local y0 = _tb_y0
+	draw.text(3, y0, "[", fg, nil)
+	draw.text(4, y0, "S", fg, nil)
+	draw.text(5, y0, "]", fg, nil)
+
+	-- Overlay: per-slot icon rows (multi-row, per-row colours via draw.text).
+	for _, d in ipairs(_tb_icon_data) do
+		if d.meta then
+			for i = 1, d.nrows do
+				local L   = d.lines[i] or ""
+				local pad = math.max(0, math.floor((d.slot_w - #L) / 2))
+				local ifg, ibg = gfx_icon_row_style(d.meta, i, fg, tb, d.sel)
+				draw.text(d.sx + pad, d.y_icon + i - 1, L, ifg, ibg)
+			end
+		end
+	end
+
+	-- Overlay: search bar content (external API draws into the search region).
 	UI.search_api().draw_taskbar(draw, {
-		x = x,
-		y0 = y0,
-		sw = sw,
-		th = th,
-		tb = tb,
-		fg = fg,
+		x      = 7,
+		y0     = y0,
+		sw     = _tb_search_w,
+		th     = UI.TASKBAR_H,
+		tb     = tb,
+		fg     = fg,
 		accent = 28,
 	})
-
-	x = 7 + sw + 1
-	local si = 0
-	local slot_w = 6
-	local step = startmenu.taskbar_icon_step()
-	local function draw_slot_at(sx, id)
-		si = si + 1
-		local m = startmenu.registry[id]
-		if not m then return end
-		local lines, nrows = startmenu.icon_taskbar_lines(m, th)
-		local sel = (si == UI.taskbar_sel)
-		if sel then
-			draw.fillRect(sx, y_icon, slot_w, nrows, 28)
-		end
-		for i = 1, nrows do
-			local L = lines[i] or ""
-			local pad = math.max(0, math.floor((slot_w - #L) / 2))
-			local ifg, ibg = gfx_icon_row_style(m, i, fg, tb, sel)
-			draw.text(sx + pad, y_icon + i - 1, L, ifg, ibg)
-		end
-	end
-
-	for _, id in ipairs(startmenu.TASKBAR_LEFT) do
-		draw_slot_at(x, id)
-		x = x + step
-	end
-	for _, id in ipairs(startmenu.flatten_user_pins(14)) do
-		if x + step > settings_x - 2 then break end
-		draw_slot_at(x, id)
-		x = x + step
-	end
-	for i, id in ipairs(startmenu.TASKBAR_RIGHT) do
-		local sx = (i == 1) and settings_x or trash_x
-		draw_slot_at(sx, id)
-	end
-
-	if th >= 3 then
-		local gap_x = 7 + sw + 1
-		local gap_w = settings_x - gap_x - 1
-		if gap_w >= 12 then
-			local status_txt = deskutil.taskbar_status_line(gap_w)
-			draw.text(gap_x + math.max(0, math.floor((gap_w - #status_txt) / 2)), y0 + 1, status_txt, 28, tb)
-		elseif gap_w >= 7 then
-			local lab = "AtlasOS"
-			draw.text(gap_x + math.max(0, math.floor((gap_w - #lab) / 2)), y0 + 1, lab, 28, tb)
-		end
-	end
-
-	local dt = deskutil.dock_datetime_str()
-	local world = deskutil.dock_world_line()
-	draw.text(UI.W - #dt, y_dock, dt, 28, tb)
-	local room = UI.W - #dt - 4
-	if room >= 8 then
-		local wline = world
-		if #wline > room then wline = wline:sub(1, room - 1) .. "…" end
-		draw.text(2, y_dock, wline, 28, tb)
-	end
 end
 
 function UI.draw_start_menu()
