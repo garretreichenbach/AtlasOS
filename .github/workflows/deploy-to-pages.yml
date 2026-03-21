@@ -70,10 +70,10 @@ jobs:
               <h2>Installation</h2>
               <p>In your LuaMade game, run this command:</p>
               <div class="command-box">
-                  <code>httpget https://YOURUSERNAME.github.io/AtlasOS/atlasos-web-installer.lua /etc/startup.lua && reboot</code>
+                  <code>httpget https://garretreichenbach.github.io/AtlasOS/atlasos-web-installer.lua /etc/startup.lua && reboot</code>
               </div>
 
-              <p><strong>Note:</strong> Replace <code>YOURUSERNAME</code> with your actual GitHub username.</p>
+              <p><strong>Note:</strong> Replace <code>garretreichenbach</code> with your actual GitHub username.</p>
 
               <h2>What it does</h2>
               <ol>
@@ -99,7 +99,7 @@ jobs:
               </ul>
 
               <h2>Source</h2>
-              <p><a href="https://github.com/YOURUSERNAME/AtlasOS">View on GitHub</a></p>
+              <p><a href="https://github.com/garretreichenbach/AtlasOS">View on GitHub</a></p>
           </body>
           </html>
           EOF
