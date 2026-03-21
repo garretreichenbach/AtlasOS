@@ -72,9 +72,9 @@ function atlasgfx.init(conf)
   atlasgfx.cell_h = math.max(6, math.floor(14 * sc + 0.5))
   -- Ensure the host provides the expected drawing primitives. This is a
   -- strict, luamade-only contract for the hard cutover.
-  assert(type(gfx_lib) == "table", "atlasgfx.init: required global 'gfx' is missing - install the new luamade graphics library")
-  assert(type(gfx_lib.rect) == "function", "atlasgfx.init: gfx.rect missing")
-  assert(type(gfx_lib.getWidth) == "function" and type(gfx_lib.getHeight) == "function", "atlasgfx.init: gfx.getWidth/getHeight missing")
+  assert(type(gfx_2d) == "table", "atlasgfx.init: required global 'gfx' is missing - install the new luamade graphics library")
+  assert(type(gfx_2d.rect) == "function", "atlasgfx.init: gfx.rect missing")
+  assert(type(gfx_2d.getWidth) == "function" and type(gfx_2d.getHeight) == "function", "atlasgfx.init: gfx.getWidth/getHeight missing")
   -- setCanvasSize and clear are optional but preferred; if missing, callers may fail later.
 end
 
@@ -87,14 +87,14 @@ function atlasgfx.set_canvas_from_cells(cols, rows)
   local pw = cols * atlasgfx.cell_w
   local ph = rows * atlasgfx.cell_h
   -- Resize the underlying drawing canvas. Fail if host does not expose the API.
-  assert(type(gfx_lib.setCanvasSize) == "function", "atlasgfx.set_canvas_from_cells: gfx.setCanvasSize missing")
-  gfx_lib.setCanvasSize(pw, ph)
+  assert(type(gfx_2d.setCanvasSize) == "function", "atlasgfx.set_canvas_from_cells: gfx.setCanvasSize missing")
+  gfx_2d.setCanvasSize(pw, ph)
   return pw, ph
 end
 
 function atlasgfx.canvas_cells()
-  assert(type(gfx_lib.getWidth) == "function" and type(gfx_lib.getHeight) == "function", "atlasgfx.canvas_cells: gfx.getWidth/getHeight missing")
-  local gw, gh = gfx_lib.getWidth(), gfx_lib.getHeight()
+  assert(type(gfx_2d.getWidth) == "function" and type(gfx_2d.getHeight) == "function", "atlasgfx.canvas_cells: gfx.getWidth/getHeight missing")
+  local gw, gh = gfx_2d.getWidth(), gfx_2d.getHeight()
   assert(type(gw) == "number" and type(gh) == "number", "atlasgfx.canvas_cells: invalid canvas dimensions")
   local cw = atlasgfx.cell_w > 0 and gw / atlasgfx.cell_w or gw
   local ch = atlasgfx.cell_h > 0 and gh / atlasgfx.cell_h or gh
@@ -102,17 +102,17 @@ function atlasgfx.canvas_cells()
 end
 
 function atlasgfx.canvas_pixels_for_input()
-  assert(type(gfx_lib.getWidth) == "function" and type(gfx_lib.getHeight) == "function", "atlasgfx.canvas_pixels_for_input: gfx.getWidth/getHeight missing")
+  assert(type(gfx_2d.getWidth) == "function" and type(gfx_2d.getHeight) == "function", "atlasgfx.canvas_pixels_for_input: gfx.getWidth/getHeight missing")
   local gw, gh = gfx.getWidth(), gfx.getHeight()
   if gw and gh and gw > 0 and gh > 0 then return gw, gh end
   return nil, nil
 end
 
 function atlasgfx.begin_frame()
-  assert(type(gfx_lib.clear) == "function", "atlasgfx.begin_frame: gfx.clear missing")
-  gfx_lib.clear()
+  assert(type(gfx_2d.clear) == "function", "atlasgfx.begin_frame: gfx.clear missing")
+  gfx_2d.clear()
   -- If host provides layers, attempt to set a default layer (non-fatal).
-  if type(gfx_lib.setLayer) == "function" then gfx_lib.setLayer(atlasgfx.layer) end
+  if type(gfx_2d.setLayer) == "function" then gfx_2d.setLayer(atlasgfx.layer) end
 end
 
 function atlasgfx.fillRect(x, y, w, h, bg_color)
@@ -121,7 +121,7 @@ function atlasgfx.fillRect(x, y, w, h, bg_color)
   local px, py = atlasgfx.cell_to_pixel(x, y)
   local pw, ph = w * atlasgfx.cell_w, h * atlasgfx.cell_h
   local c = color_to_rgba(bg_color, { 0, 0, 0, 1 })
-  gfx_lib.rect(px, py, pw, ph, c[1], c[2], c[3], c[4], true)
+  gfx_2d.rect(px, py, pw, ph, c[1], c[2], c[3], c[4], true)
 end
 
 function atlasgfx.rect(x, y, w, h, fg_color)
@@ -130,7 +130,7 @@ function atlasgfx.rect(x, y, w, h, fg_color)
   local px, py = atlasgfx.cell_to_pixel(x, y)
   local pw, ph = w * atlasgfx.cell_w, h * atlasgfx.cell_h
   local c = color_to_rgba(fg_color, { 1, 1, 1, 1 })
-  gfx_lib.rect(px, py, pw, ph, c[1], c[2], c[3], c[4], false)
+  gfx_2d.rect(px, py, pw, ph, c[1], c[2], c[3], c[4], false)
 end
 
 function atlasgfx.text(x, y, str, fg_color, bg_color)
@@ -146,7 +146,7 @@ function atlasgfx.text(x, y, str, fg_color, bg_color)
   for i = 1, #str do
     local col = x + i - 1
     local px, py = atlasgfx.cell_to_pixel(col, y)
-    gfx_lib.rect(px, py, atlasgfx.cell_w, atlasgfx.cell_h, br, bgc, bb, ba, true)
+    gfx_2d.rect(px, py, atlasgfx.cell_w, atlasgfx.cell_h, br, bgc, bb, ba, true)
     local byte = str:byte(i) or 32
     if byte < 0 or byte > 127 then byte = 63 end
     local g = FONT[byte + 1]
@@ -157,7 +157,7 @@ function atlasgfx.text(x, y, str, fg_color, bg_color)
         local bits = g[row]
         for colp = 0, 7 do
           if bit_pixel(bits, colp) == 1 then
-            gfx_lib.rect(ox + colp * scale, oy + (row - 1) * scale, scale, scale, rf, gf, bf, af, true)
+            gfx_2d.rect(ox + colp * scale, oy + (row - 1) * scale, scale, scale, rf, gf, bf, af, true)
           end
         end
       end
