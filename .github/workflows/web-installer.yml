@@ -6,13 +6,13 @@ name: Web installer
       - main
     paths:
       - 'AtlasOS/**'
-      - 'Lib/**'
+      - 'lib/**'
       - 'scripts/build_web_installer.py'
       - '.github/workflows/web-installer.yml'
   pull_request:
     paths:
       - 'AtlasOS/**'
-      - 'Lib/**'
+      - 'lib/**'
       - 'scripts/build_web_installer.py'
       - '.github/workflows/web-installer.yml'
   workflow_dispatch:
