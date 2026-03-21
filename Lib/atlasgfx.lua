@@ -87,12 +87,8 @@ function atlasgfx.init(conf)
   -- setCanvasSize and clear are optional but preferred; if missing, callers may fail later.
 end
 
-function atlasgfx.is_bitmap()
-  -- Hard-cutover: treat the drawing surface as bitmap/cell-backed. Callers
-  -- that branch on this will see consistent behavior and should be migrated
-  -- in Phase 2 to remove the conditional logic.
-  return true
-end
+-- atlasgfx.is_bitmap() removed: hard cutover enforces bitmap-style rendering
+-- through the strict adapter. Callers should no longer branch on this.
 
 function atlasgfx.set_canvas_from_cells(cols, rows)
   cols = math.max(1, math.floor(cols or 80))
