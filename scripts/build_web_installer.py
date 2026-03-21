@@ -12,7 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_PATH = REPO_ROOT / "dist" / "atlasos-web-installer.lua"
 SOURCE_ROOTS = (
     (REPO_ROOT / "AtlasOS", "/home/AtlasOS"),
-    (REPO_ROOT / "Lib", "/home/lib"),
+    (REPO_ROOT / "lib", "/home/lib"),
 )
 CORE_PATHS = (
     "/home/AtlasOS/installer_gate.lua",
@@ -312,7 +312,7 @@ def main() -> int:
     output = build(args.output.resolve())
     bundle_files = list(iter_bundle_files())
     print(f"Built {output}")
-    print(f"Bundled {len(bundle_files)} files from AtlasOS/ and Lib/")
+    print(f"Bundled {len(bundle_files)} files from AtlasOS/ and lib/")
     return 0
 
 
