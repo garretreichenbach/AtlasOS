@@ -258,6 +258,254 @@ local function build_taskbar_gui()
 	_tb_world     = wd_txt
 end
 
+-- ── Start Menu GUI (Phase 2.3) ───────────────────────────────────────────────
+local _SM_MAX_GROUPS = 8      -- max group name labels
+local _SM_MAX_TILES  = 48     -- max tile buttons (pooled)
+local _SM_MAX_APPS   = 64     -- max all-apps rows
+
+local _sm_mgr        = nil     -- GUIManager
+local _sm_key        = nil     -- "W:H:TASKBAR_H" rebuild trigger
+local _sm_panel      = nil     -- Panel: main menu container
+local _sm_search_txt = nil     -- Text: search placeholder
+local _sm_pinned_hdr = nil     -- Text: "── Pinned (groups) ──"
+local _sm_grp_names  = {}      -- Text[]: group name labels
+local _sm_tiles      = {}      -- Button[]: pooled tile buttons
+local _sm_allapps_hdr= nil     -- Text: "── All apps ──"
+local _sm_app_icon   = {}      -- Text[]: all-apps icon marks
+local _sm_app_label  = {}      -- Text[]: all-apps labels
+local _sm_footer_txt = nil     -- Text: hint footer
+-- per-frame tile render data (for icon text overlays)
+local _sm_tile_data  = {}      -- [i] = {tx, row, tile_w, nrows, block, meta}
+
+local function build_start_menu_gui()
+	local P = gui_lib.Panel
+	local T = gui_lib.Text
+	local B = gui_lib.Button
+	local mgr = gui_lib.GUIManager.new()
+	mgr:setBackgroundColor(0, 0, 0, 0)
+
+	local panel = P.new(0, 0, 0, 0)
+	panel:setVisible(false)
+	mgr:addComponent(panel)
+
+	local search_t = T.new(0, 0, " Search apps and files...")
+	search_t:setScale(1) ; search_t:setVisible(false)
+	mgr:addComponent(search_t)
+
+	local pinned_hdr = T.new(0, 0, "")
+	pinned_hdr:setScale(1) ; pinned_hdr:setVisible(false)
+	mgr:addComponent(pinned_hdr)
+
+	local grp_names = {}
+	for i = 1, _SM_MAX_GROUPS do
+		local t = T.new(0, 0, "") ; t:setScale(1) ; t:setVisible(false)
+		mgr:addComponent(t)
+		grp_names[i] = t
+	end
+
+	local tiles = {}
+	for i = 1, _SM_MAX_TILES do
+		local b = B.new(0, 0, 0, 0, "", function() end)
+		b:setVisible(false)
+		mgr:addComponent(b)
+		tiles[i] = b
+	end
+
+	local allapps_hdr = T.new(0, 0, "")
+	allapps_hdr:setScale(1) ; allapps_hdr:setVisible(false)
+	mgr:addComponent(allapps_hdr)
+
+	local app_icons, app_labels = {}, {}
+	for i = 1, _SM_MAX_APPS do
+		local ic = T.new(0, 0, "") ; ic:setScale(1) ; ic:setVisible(false)
+		local lb = T.new(0, 0, "") ; lb:setScale(1) ; lb:setVisible(false)
+		mgr:addComponent(ic)
+		mgr:addComponent(lb)
+		app_icons[i] = ic ; app_labels[i] = lb
+	end
+
+	local footer = T.new(0, 0, "")
+	footer:setScale(1) ; footer:setVisible(false)
+	mgr:addComponent(footer)
+
+	mgr:setLayoutCallback(function(m, _pw, _ph)
+		local visible = UI.start_open
+		local t   = atlastheme.load()
+		local th  = UI.TASKBAR_H
+		local W, H = UI.W, UI.H
+		local pw  = math.min(50, math.max(36, math.floor(W * 0.52)))
+		local ph  = math.min(H - th - 2, math.max(14, math.floor(H * 0.68)))
+		local py  = H - th - ph + 1
+		local px  = 2
+		local panel_bg_tok = t.mode == "dark" and "black" or "white"
+		local panel_fg_tok = t.mode == "dark" and "white" or "black"
+		local r,g,b,a = C(panel_bg_tok)
+		local fr,fg_,fb,fa = C(panel_fg_tok)
+		local hr,hg,hb,ha = C(28)   -- highlight/accent color
+
+		_sm_panel:setVisible(visible)
+		_sm_panel:setPosition((px-1)*CW, (py-1)*CH)
+		_sm_panel:setSize(pw*CW, ph*CH)
+		_sm_panel:setBackgroundColor(r,g,b,a)
+		_sm_panel:setBorderColor(hr,hg,hb,ha)
+
+		if not visible then
+			for i = 1, _SM_MAX_GROUPS do if _sm_grp_names[i] then _sm_grp_names[i]:setVisible(false) end end
+			for i = 1, _SM_MAX_TILES do if _sm_tiles[i] then _sm_tiles[i]:setVisible(false) end end
+			for i = 1, _SM_MAX_APPS do
+				if _sm_app_icon[i] then _sm_app_icon[i]:setVisible(false) end
+				if _sm_app_label[i] then _sm_app_label[i]:setVisible(false) end
+			end
+			_sm_search_txt:setVisible(false)
+			_sm_pinned_hdr:setVisible(false)
+			_sm_allapps_hdr:setVisible(false)
+			_sm_footer_txt:setVisible(false)
+			return
+		end
+
+		-- Row counter in cells
+		local row = py + 1
+
+		-- Search placeholder
+		_sm_search_txt:setVisible(true)
+		_sm_search_txt:setText(" Search apps and files...")
+		_sm_search_txt:setColor(fr,fg_,fb,fa)
+		_sm_search_txt:setPosition((px)*CW, (row-1)*CH)
+		row = row + 2
+
+		-- Pinned header
+		_sm_pinned_hdr:setVisible(true)
+		_sm_pinned_hdr:setText("── Pinned (groups) ──")
+		_sm_pinned_hdr:setColor(hr,hg,hb,ha)
+		_sm_pinned_hdr:setPosition((px)*CW, (row-1)*CH)
+		row = row + 1
+
+		local groups = startmenu.load()
+		local tile_w, gap = 14, 1
+		local icon_rows = 4
+		local tile_h = icon_rows + 1
+		local cols = math.max(2, math.floor((pw - 3) / (tile_w + gap)))
+
+		local ti = 0   -- tile pool index
+		local gi = 0   -- group name index
+		_sm_tile_data = {}
+
+		for _, g in ipairs(groups) do
+			if row >= py + ph - 8 then break end
+			gi = gi + 1
+			local grp_t = _sm_grp_names[gi]
+			if grp_t then
+				grp_t:setVisible(true)
+				grp_t:setText(g.name)
+				grp_t:setColor(hr,hg,hb,ha)
+				grp_t:setPosition((px)*CW, (row-1)*CH)
+			end
+			row = row + 1
+			local col = 0
+			for _, id in ipairs(g.ids) do
+				local meta = startmenu.registry[id]
+				if meta and row + tile_h <= py + ph - 6 then
+					ti = ti + 1
+					local tb = _sm_tiles[ti]
+					if tb then
+						local tx = px + 2 + col * (tile_w + gap)
+						tb:setVisible(true)
+						tb:setPosition((tx-1)*CW, (row-1)*CH)
+						tb:setSize(tile_w*CW, tile_h*CH)
+						tb:setNormalColor(C(22))
+						tb:setLabel("")  -- icon text drawn as overlay
+						local cap_id = id
+						tb:setOnPress(function()
+							UI.start_open = false
+							UI.launch_app(cap_id)
+						end)
+						-- store icon overlay data
+						local iw = tile_w - 2
+						local raw = startmenu.icon_lines(meta)
+						while #raw > icon_rows do table.remove(raw) end
+						local blank = string.rep(" ", iw)
+						local top = math.floor((icon_rows - #raw) / 2)
+						local block = {}
+						for _ = 1, top do block[#block+1] = blank end
+						for j = 1, #raw do
+							block[#block+1] = raw[j] .. string.rep(" ", math.max(0, iw - #raw[j]))
+						end
+						while #block < icon_rows do block[#block+1] = blank end
+						_sm_tile_data[ti] = {
+							tx = tx, row = row,
+							tile_w = tile_w, nrows = icon_rows,
+							block = block, meta = meta,
+						}
+					end
+					col = col + 1
+					if col >= cols then
+						col = 0
+						row = row + tile_h + 1
+					end
+				end
+			end
+			if col > 0 then row = row + tile_h + 1 end
+			row = row + 1
+		end
+
+		-- Hide unused tile pool entries
+		for j = ti + 1, _SM_MAX_TILES do
+			if _sm_tiles[j] then _sm_tiles[j]:setVisible(false) end
+		end
+		for j = gi + 1, _SM_MAX_GROUPS do
+			if _sm_grp_names[j] then _sm_grp_names[j]:setVisible(false) end
+		end
+
+		-- All apps header
+		_sm_allapps_hdr:setVisible(true)
+		_sm_allapps_hdr:setText("── All apps ──")
+		_sm_allapps_hdr:setColor(hr,hg,hb,ha)
+		_sm_allapps_hdr:setPosition((px)*CW, (row-1)*CH)
+		row = row + 1
+
+		local ai = 0
+		for _, id in ipairs(startmenu.all_app_ids()) do
+			if row >= py + ph - 3 then break end
+			local meta = startmenu.registry[id]
+			if meta then
+				ai = ai + 1
+				local mark = (startmenu.icon_lines(meta)[1] or "?"):sub(1, 8)
+				local ifg, ibg = gfx_icon_row_style(meta, 1, panel_fg_tok, panel_bg_tok, false)
+				local ic_t = _sm_app_icon[ai]
+				local lb_t = _sm_app_label[ai]
+				if ic_t and lb_t then
+					ic_t:setVisible(true)
+					ic_t:setText(mark)
+					ic_t:setColor(C(ifg))
+					ic_t:setPosition((px+1)*CW, (row-1)*CH)
+					lb_t:setVisible(true)
+					lb_t:setText("  " .. meta.label .. "  (" .. id .. ")")
+					lb_t:setColor(fr,fg_,fb,fa)
+					lb_t:setPosition((px+1+#mark)*CW, (row-1)*CH)
+				end
+				row = row + 1
+			end
+		end
+		for j = ai + 1, _SM_MAX_APPS do
+			if _sm_app_icon[j] then _sm_app_icon[j]:setVisible(false) end
+			if _sm_app_label[j] then _sm_app_label[j]:setVisible(false) end
+		end
+
+		-- Footer
+		_sm_footer_txt:setVisible(true)
+		_sm_footer_txt:setText("pin user apps only  find|search <text>")
+		_sm_footer_txt:setColor(hr,hg,hb,ha)
+		_sm_footer_txt:setPosition((px)*CW, (py + ph - 2 - 1)*CH)
+	end)
+
+	_sm_mgr = mgr ; _sm_panel = panel
+	_sm_search_txt = search_t ; _sm_pinned_hdr = pinned_hdr
+	_sm_grp_names = grp_names ; _sm_tiles = tiles
+	_sm_allapps_hdr = allapps_hdr
+	_sm_app_icon = app_icons ; _sm_app_label = app_labels
+	_sm_footer_txt = footer
+end
+
 local function settings_ctx()
 	return {
 		UI = UI,
@@ -1106,80 +1354,27 @@ end
 
 function UI.draw_start_menu()
 	if not UI.start_open then return end
-	local th = UI.TASKBAR_H
-	local pw = math.min(50, math.max(36, math.floor(UI.W * 0.52)))
-	local ph = math.min(UI.H - th - 2, math.max(14, math.floor(UI.H * 0.68)))
-	local py = UI.H - th - ph + 1
-	local px = 2
-	local panel_bg = atlastheme.load().mode == "dark" and "black" or "white"
-	local panel_fg = atlastheme.load().mode == "dark" and "white" or "black"
-	draw.fillRect(px, py, pw, ph, panel_bg)
-	draw.rect(px, py, pw, ph, 22)
-	local row = py + 1
-	draw.text(px + 1, row, " Search apps and files...", panel_fg, panel_bg)
-	row = row + 2
-	draw.text(px + 1, row, "── Pinned (groups) ──", 22, panel_bg)
-	row = row + 1
-	local groups = startmenu.load()
-	local tile_w, gap = 14, 1
-	local icon_rows = 4
-	local tile_h = icon_rows + 1
-	local cols = math.max(2, math.floor((pw - 3) / (tile_w + gap)))
-	local function tile_icon_block(meta, max_w, nrows)
-		local raw = startmenu.icon_lines(meta)
-		while #raw > nrows do table.remove(raw) end
-		for i = 1, #raw do
-			if #raw[i] > max_w then raw[i] = raw[i]:sub(1, max_w) end
+	local sm_key = UI.W .. ":" .. UI.H .. ":" .. UI.TASKBAR_H
+	if _sm_mgr == nil or _sm_key ~= sm_key then
+		build_start_menu_gui()
+		_sm_key = sm_key
+	end
+	_sm_mgr:update(0)
+	_sm_mgr:draw()
+	-- Icon text overlays (same as taskbar: multi-row multi-color can't be pure Text component)
+	for _, d in ipairs(_sm_tile_data) do
+		local iw = d.tile_w - 2
+		for r = 1, d.nrows do
+			local ifg, ibg = gfx_icon_row_style(d.meta, r, "bright_white", 22, false)
+			draw.text(d.tx + 1, d.row + r - 1, d.block[r], ifg, ibg)
 		end
-		local blank = string.rep(" ", max_w)
-		local top = math.floor((nrows - #raw) / 2)
-		local out = {}
-		for _ = 1, top do out[#out + 1] = blank end
-		for i = 1, #raw do out[#out + 1] = raw[i] .. string.rep(" ", max_w - #raw[i]) end
-		while #out < nrows do out[#out + 1] = blank end
-		return out
+		-- label row below icon
+		local lab = d.meta.label:sub(1, iw)
+		local t = atlastheme.load()
+		local panel_fg = t.mode == "dark" and "white" or "black"
+		local panel_bg = t.mode == "dark" and "black" or "white"
+		draw.text(d.tx + 1, d.row + d.nrows, lab .. string.rep(" ", iw - #lab), panel_fg, panel_bg)
 	end
-	for _, g in ipairs(groups) do
-		if row >= py + ph - 8 then break end
-		draw.text(px + 1, row, g.name, 28, panel_bg)
-		row = row + 1
-		local col = 0
-		for _, id in ipairs(g.ids) do
-			local m = startmenu.registry[id]
-			if m and row + tile_h <= py + ph - 6 then
-				local tx = px + 2 + col * (tile_w + gap)
-				local iw = tile_w - 2
-				draw.fillRect(tx, row, tile_w, tile_h, 22)
-				local block = tile_icon_block(m, iw, icon_rows)
-				for r = 1, icon_rows do
-					local ifg, ibg = gfx_icon_row_style(m, r, "bright_white", 22, false)
-					draw.text(tx + 1, row + r - 1, block[r], ifg, ibg)
-				end
-				local lab = m.label:sub(1, iw)
-				draw.text(tx + 1, row + icon_rows, lab .. string.rep(" ", iw - #lab), panel_fg, panel_bg)
-				col = col + 1
-				if col >= cols then
-					col = 0
-					row = row + tile_h + 1
-				end
-			end
-		end
-		if col > 0 then row = row + tile_h + 1 end
-		row = row + 1
-	end
-	draw.text(px + 1, row, "── All apps ──", 22, panel_bg)
-	row = row + 1
-	for _, id in ipairs(startmenu.all_app_ids()) do
-		if row >= py + ph - 3 then break end
-		local m = startmenu.registry[id]
-		local mark = (startmenu.icon_lines(m)[1] or "?"):sub(1, 8)
-		local mx = px + 2
-		local ifg, ibg = gfx_icon_row_style(m, 1, panel_fg, panel_bg, false)
-		draw.text(mx, row, mark, ifg, ibg)
-		draw.text(mx + #mark, row, "  " .. m.label .. "  (" .. id .. ")", panel_fg, panel_bg)
-		row = row + 1
-	end
-	draw.text(px + 1, py + ph - 2, "pin user apps only  find|search <text>", 28, panel_bg)
 end
 
 function UI.draw_activities_overlay()
