@@ -1758,7 +1758,7 @@ dofile("/home/AtlasOS/shell.lua")
   (see https://garretreichenbach.github.io/Logiscript/markdown/core/luamade.html#startup-behavior).
 
   Deploy files first:
-    · Repo Lib/     → virtual  /home/lib/
+    · Repo lib/     → virtual  /home/lib/
     · Repo AtlasOS/ → virtual  /home/AtlasOS/
   Then run:  run /home/AtlasOS/installer.lua
 
@@ -1851,7 +1851,7 @@ local function install()
 		for _, p in ipairs(miss) do print("  " .. p) end
 		print("")
 		print("Copy the repo into the computer:")
-		print("  Lib/*        → /home/lib/")
+		print("  lib/*        → /home/lib/")
 		print("  AtlasOS/*    → /home/AtlasOS/")
 		print("Then run this installer again.")
 		return false
@@ -2038,7 +2038,7 @@ err_panel:setVisible(false)
 local err_title     = make_label("AtlasOS — installation failed", 2, "bright_yellow", "center")
 local err_list      = make_label("", 1, "bright_white")
 local err_footer    = make_label(
-	"Mount repo as /disk/AtlasOS + /disk/Lib or copy into /home/",
+	"Mount repo as /disk/AtlasOS + /disk/lib or copy into /home/",
 	1, "bright_white", "center")
 local err_exit      = make_label("Press any key to exit…", 1, "bright_yellow", "center")
 
@@ -2424,7 +2424,7 @@ httpget https://raw.githubusercontent.com/garretreichenbach/AtlasOS/main/dist/at
 reboot
 ```
 
-On that next boot, the generated installer unpacks **`AtlasOS/`** into **`/home/AtlasOS/`** and **`Lib/`** into **`/home/lib/`**, rewrites **`/etc/startup.lua`** to the normal AtlasOS boot hook, then launches the first-run setup immediately.
+On that next boot, the generated installer unpacks **`AtlasOS/`** into **`/home/AtlasOS/`** and **`lib/`** into **`/home/lib/`**, rewrites **`/etc/startup.lua`** to the normal AtlasOS boot hook, then launches the first-run setup immediately.
 
 If you need to preserve an existing custom startup script, use the safer two-step flow instead so the installer can back it up to **`/etc/startup.lua.atlasos_backup`** before replacing it:
 
@@ -2434,8 +2434,8 @@ run /tmp/atlasos-web-installer.lua
 ```
 
 1. Copy this repo into the computer’s virtual FS (either layout works):
-   - **Full install:** **`Lib/`** → **`/home/lib/`**, **`AtlasOS/`** → **`/home/AtlasOS/`**
-   - **Install-from-media:** put the same two folders on a mounted volume (e.g. **`/disk/AtlasOS`**, **`/disk/Lib`**) — the first-run loader **copies** them into **`/home/`** while the progress bar advances. Checked roots include **`/install`**, **`/mnt`**, **`/media`**, **`/disk`**, **`/disk1`**, **`/floppy`**. Optionally set **`/etc/AtlasOS/staging_root.txt`** to a single line (absolute path) if your mount point is elsewhere.
+   - **Full install:** **`lib/`** → **`/home/lib/`**, **`AtlasOS/`** → **`/home/AtlasOS/`**
+   - **Install-from-media:** put the same two folders on a mounted volume (e.g. **`/disk/AtlasOS`**, **`/disk/lib`**) — the first-run loader **copies** them into **`/home/`** while the progress bar advances. Checked roots include **`/install`**, **`/mnt`**, **`/media`**, **`/disk`**, **`/disk1`**, **`/floppy`**. Optionally set **`/etc/AtlasOS/staging_root.txt`** to a single line (absolute path) if your mount point is elsewhere.
 2. Run **`run /home/AtlasOS/installer.lua`**. It checks paths, backs up any existing **`/etc/startup.lua`**, and writes a startup that runs **`installer_gate.lua`**: first boot shows a **copy/verify** loader (real file work, not a fake timer) then **setup** (username + light/dark theme), then writes **`/etc/AtlasOS/setup_complete`** and enters the desktop. Later boots skip setup. To run setup again, delete **`/etc/AtlasOS/setup_complete`** (and optionally **`/etc/AtlasOS/profile.json`** / **`theme.json`**) and reboot. **Updating from an older installer** (startup used to call **`boot_desktop.lua`** only): after copying new files, either run through setup once or create **`/etc/AtlasOS/setup_complete`** (e.g. `fs.write` / equivalent) so the gate skips the wizard.
 3. **Reboot** the computer or open a new terminal session.
 
@@ -2510,7 +2510,7 @@ With **no** `start_menu.json` (and no migratable legacy `.txt`), every **user-pi
 
 ## System apps (`/home/AtlasOS/apps/`)
 
-Every built-in (Guide via `welcome`, Files, Console, **Chat** — servers/channels on LuaMade **`net`**, …) is a folder with **`appinfo.json`** and usually a **`paint_module`** Lua file (some also use an **`entry`** script for `runapp`). Copy the repo **`AtlasOS/apps/`** tree to **`/home/AtlasOS/apps/`** and **`Lib/atlas_chat_net.lua`** to **`/home/lib/`**. If a package is missing, the taskbar still reserves slots (placeholder `?`) and default pins may show stubs until you install the folder. Chat uses [Network Interface API](https://garretreichenbach.github.io/Logiscript/markdown/io/networking.html) global channels (`openChannel` / `sendChannel` / `receiveChannel`).
+Every built-in (Guide via `welcome`, Files, Console, **Chat** — servers/channels on LuaMade **`net`**, …) is a folder with **`appinfo.json`** and usually a **`paint_module`** Lua file (some also use an **`entry`** script for `runapp`). Copy the repo **`AtlasOS/apps/`** tree to **`/home/AtlasOS/apps/`** and **`lib/atlas_chat_net.lua`** to **`/home/lib/`**. If a package is missing, the taskbar still reserves slots (placeholder `?`) and default pins may show stubs until you install the folder. Chat uses [Network Interface API](https://garretreichenbach.github.io/Logiscript/markdown/io/networking.html) global channels (`openChannel` / `sendChannel` / `receiveChannel`).
 
 ## App packages
 
@@ -5121,8 +5121,8 @@ return D
 	{
 		path = [[/home/lib/atlasinstall.lua]],
 		body = [=[--[[
-  First-boot file install: copy AtlasOS + Lib from a staging volume into /home, then verify.
-  Staging root must contain AtlasOS/ and Lib/ (same layout as the repo).
+  First-boot file install: copy AtlasOS + lib from a staging volume into /home, then verify.
+  Staging root must contain AtlasOS/ and lib/ (same layout as the repo).
 ]]
 
 local paths = dofile("/home/lib/desktop_paths.lua")
@@ -5148,7 +5148,7 @@ function M.looks_like_bundle(root)
 	root = paths.normalize(root or "")
 	if root == "" or root == "/" then return false end
 	local shell = paths.join(paths.join(root, "AtlasOS"), "shell.lua")
-	local sm = paths.join(paths.join(root, "Lib"), "startmenu.lua")
+	local sm = paths.join(paths.join(root, "lib"), "startmenu.lua")
 	local ok1, a = pcall(fs.read, shell)
 	local ok2, b = pcall(fs.read, sm)
 	return ok1 and ok2 and a ~= nil and b ~= nil
@@ -5161,7 +5161,7 @@ local function staging_hint_path()
 	return line
 end
 
---- Pick a volume/folder that holds AtlasOS/ + Lib/, or nil if files already live under /home only.
+--- Pick a volume/folder that holds AtlasOS/ + lib/, or nil if files already live under /home only.
 function M.find_staging_root(cli_path)
 	local tried = {}
 	local function try(p)
@@ -5200,7 +5200,7 @@ end
 
 local function map_dest_rel(rel)
 	if rel:match("^AtlasOS/") then return "/home/" .. rel end
-	if rel:match("^Lib/") then return "/home/" .. rel end
+	if rel:match("^lib/") then return "/home/" .. rel end
 	return nil
 end
 
@@ -5225,7 +5225,7 @@ end
 local function collect_copy_steps(staging_root)
 	staging_root = paths.normalize(staging_root)
 	local rels = {}
-	for _, top in ipairs({ "AtlasOS", "Lib" }) do
+	for _, top in ipairs({ "AtlasOS", "lib" }) do
 		local top_path = paths.join(staging_root, top)
 		local ok, names = pcall(fs.list, top_path)
 		if ok and names then walk_files(staging_root, top, rels) end

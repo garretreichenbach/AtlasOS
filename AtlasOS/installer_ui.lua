@@ -103,7 +103,7 @@ err_panel:setVisible(false)
 local err_title     = make_label("AtlasOS — installation failed", 2, "bright_yellow", "center")
 local err_list      = make_label("", 1, "bright_white")
 local err_footer    = make_label(
-	"Mount repo as /disk/AtlasOS + /disk/Lib or copy into /home/",
+	"Mount repo as /disk/AtlasOS + /disk/lib or copy into /home/",
 	1, "bright_white", "center")
 local err_exit      = make_label("Press any key to exit…", 1, "bright_yellow", "center")
 

@@ -5,7 +5,7 @@
   (see https://garretreichenbach.github.io/Logiscript/markdown/core/luamade.html#startup-behavior).
 
   Deploy files first:
-    · Repo Lib/     → virtual  /home/lib/
+    · Repo lib/     → virtual  /home/lib/
     · Repo AtlasOS/ → virtual  /home/AtlasOS/
   Then run:  run /home/AtlasOS/installer.lua
 
@@ -98,7 +98,7 @@ local function install()
 		for _, p in ipairs(miss) do print("  " .. p) end
 		print("")
 		print("Copy the repo into the computer:")
-		print("  Lib/*        → /home/lib/")
+		print("  lib/*        → /home/lib/")
 		print("  AtlasOS/*    → /home/AtlasOS/")
 		print("Then run this installer again.")
 		return false

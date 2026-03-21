@@ -26,7 +26,7 @@ httpget https://raw.githubusercontent.com/garretreichenbach/AtlasOS/main/dist/at
 reboot
 ```
 
-On that next boot, the generated installer unpacks **`AtlasOS/`** into **`/home/AtlasOS/`** and **`Lib/`** into **`/home/lib/`**, rewrites **`/etc/startup.lua`** to the normal AtlasOS boot hook, then launches the first-run setup immediately.
+On that next boot, the generated installer unpacks **`AtlasOS/`** into **`/home/AtlasOS/`** and **`lib/`** into **`/home/lib/`**, rewrites **`/etc/startup.lua`** to the normal AtlasOS boot hook, then launches the first-run setup immediately.
 
 If you need to preserve an existing custom startup script, use the safer two-step flow instead so the installer can back it up to **`/etc/startup.lua.atlasos_backup`** before replacing it:
 
@@ -36,8 +36,8 @@ run /tmp/atlasos-web-installer.lua
 ```
 
 1. Copy this repo into the computer’s virtual FS (either layout works):
-   - **Full install:** **`Lib/`** → **`/home/lib/`**, **`AtlasOS/`** → **`/home/AtlasOS/`**
-   - **Install-from-media:** put the same two folders on a mounted volume (e.g. **`/disk/AtlasOS`**, **`/disk/Lib`**) — the first-run loader **copies** them into **`/home/`** while the progress bar advances. Checked roots include **`/install`**, **`/mnt`**, **`/media`**, **`/disk`**, **`/disk1`**, **`/floppy`**. Optionally set **`/etc/AtlasOS/staging_root.txt`** to a single line (absolute path) if your mount point is elsewhere.
+   - **Full install:** **`lib/`** → **`/home/lib/`**, **`AtlasOS/`** → **`/home/AtlasOS/`**
+   - **Install-from-media:** put the same two folders on a mounted volume (e.g. **`/disk/AtlasOS`**, **`/disk/lib`**) — the first-run loader **copies** them into **`/home/`** while the progress bar advances. Checked roots include **`/install`**, **`/mnt`**, **`/media`**, **`/disk`**, **`/disk1`**, **`/floppy`**. Optionally set **`/etc/AtlasOS/staging_root.txt`** to a single line (absolute path) if your mount point is elsewhere.
 2. Run **`run /home/AtlasOS/installer.lua`**. It checks paths, backs up any existing **`/etc/startup.lua`**, and writes a startup that runs **`installer_gate.lua`**: first boot shows a **copy/verify** loader (real file work, not a fake timer) then **setup** (username + light/dark theme), then writes **`/etc/AtlasOS/setup_complete`** and enters the desktop. Later boots skip setup. To run setup again, delete **`/etc/AtlasOS/setup_complete`** (and optionally **`/etc/AtlasOS/profile.json`** / **`theme.json`**) and reboot. **Updating from an older installer** (startup used to call **`boot_desktop.lua`** only): after copying new files, either run through setup once or create **`/etc/AtlasOS/setup_complete`** (e.g. `fs.write` / equivalent) so the gate skips the wizard.
 3. **Reboot** the computer or open a new terminal session.
 
@@ -112,7 +112,7 @@ With **no** `start_menu.json` (and no migratable legacy `.txt`), every **user-pi
 
 ## System apps (`/home/AtlasOS/apps/`)
 
-Every built-in (Guide via `welcome`, Files, Console, **Chat** — servers/channels on LuaMade **`net`**, …) is a folder with **`appinfo.json`** and usually a **`paint_module`** Lua file (some also use an **`entry`** script for `runapp`). Copy the repo **`AtlasOS/apps/`** tree to **`/home/AtlasOS/apps/`** and **`Lib/atlas_chat_net.lua`** to **`/home/lib/`**. If a package is missing, the taskbar still reserves slots (placeholder `?`) and default pins may show stubs until you install the folder. Chat uses [Network Interface API](https://garretreichenbach.github.io/Logiscript/markdown/io/networking.html) global channels (`openChannel` / `sendChannel` / `receiveChannel`).
+Every built-in (Guide via `welcome`, Files, Console, **Chat** — servers/channels on LuaMade **`net`**, …) is a folder with **`appinfo.json`** and usually a **`paint_module`** Lua file (some also use an **`entry`** script for `runapp`). Copy the repo **`AtlasOS/apps/`** tree to **`/home/AtlasOS/apps/`** and **`lib/atlas_chat_net.lua`** to **`/home/lib/`**. If a package is missing, the taskbar still reserves slots (placeholder `?`) and default pins may show stubs until you install the folder. Chat uses [Network Interface API](https://garretreichenbach.github.io/Logiscript/markdown/io/networking.html) global channels (`openChannel` / `sendChannel` / `receiveChannel`).
 
 ## App packages
 

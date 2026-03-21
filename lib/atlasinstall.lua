@@ -1,6 +1,6 @@
 --[[
-  First-boot file install: copy AtlasOS + Lib from a staging volume into /home, then verify.
-  Staging root must contain AtlasOS/ and Lib/ (same layout as the repo).
+  First-boot file install: copy AtlasOS + lib from a staging volume into /home, then verify.
+  Staging root must contain AtlasOS/ and lib/ (same layout as the repo).
 ]]
 
 local paths = dofile("/home/lib/desktop_paths.lua")
@@ -26,7 +26,7 @@ function M.looks_like_bundle(root)
 	root = paths.normalize(root or "")
 	if root == "" or root == "/" then return false end
 	local shell = paths.join(paths.join(root, "AtlasOS"), "shell.lua")
-	local sm = paths.join(paths.join(root, "Lib"), "startmenu.lua")
+	local sm = paths.join(paths.join(root, "lib"), "startmenu.lua")
 	local ok1, a = pcall(fs.read, shell)
 	local ok2, b = pcall(fs.read, sm)
 	return ok1 and ok2 and a ~= nil and b ~= nil
@@ -39,7 +39,7 @@ local function staging_hint_path()
 	return line
 end
 
---- Pick a volume/folder that holds AtlasOS/ + Lib/, or nil if files already live under /home only.
+--- Pick a volume/folder that holds AtlasOS/ + lib/, or nil if files already live under /home only.
 function M.find_staging_root(cli_path)
 	local tried = {}
 	local function try(p)
@@ -78,7 +78,7 @@ end
 
 local function map_dest_rel(rel)
 	if rel:match("^AtlasOS/") then return "/home/" .. rel end
-	if rel:match("^Lib/") then return "/home/" .. rel end
+	if rel:match("^lib/") then return "/home/" .. rel end
 	return nil
 end
 
@@ -103,7 +103,7 @@ end
 local function collect_copy_steps(staging_root)
 	staging_root = paths.normalize(staging_root)
 	local rels = {}
-	for _, top in ipairs({ "AtlasOS", "Lib" }) do
+	for _, top in ipairs({ "AtlasOS", "lib" }) do
 		local top_path = paths.join(staging_root, top)
 		local ok, names = pcall(fs.list, top_path)
 		if ok and names then walk_files(staging_root, top, rels) end

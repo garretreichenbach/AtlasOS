@@ -9,7 +9,7 @@ For the user-facing install guide, in-game usage, and desktop/app behavior, star
 | Path | Purpose |
 |---|---|
 | [`AtlasOS/`](./AtlasOS/) | Core OS scripts, built-in apps, installer entrypoints, and user-facing documentation. |
-| [`Lib/`](./Lib/) | Shared libraries used by AtlasOS at runtime. |
+| [`lib/`](./lib/) | Shared libraries used by AtlasOS at runtime. |
 | [`scripts/`](./scripts/) | Host-side build tooling, currently the web installer builder. |
 | [`dist/`](./dist/) | Generated release artifacts committed to the repository. |
 | [`.github/workflows/`](./.github/workflows/) | CI and release automation for the generated web installer. |
@@ -35,7 +35,7 @@ That generates:
 The generated installer bundles the current contents of:
 
 - [`AtlasOS/`](./AtlasOS/)
-- [`Lib/`](./Lib/)
+- [`lib/`](./lib/)
 
 Whenever files under those trees change in a way that should affect installs, rebuild the installer and commit the updated `dist` file.
 
@@ -92,9 +92,9 @@ The workflow rebuilds the installer, verifies it matches the checked-in `dist` a
 Common places to start depending on the type of change:
 
 - desktop/taskbar/window behavior: [`AtlasOS/ui.lua`](./AtlasOS/ui.lua)
-- startup/install flow: [`AtlasOS/installer.lua`](./AtlasOS/installer.lua), [`AtlasOS/installer_gate.lua`](./AtlasOS/installer_gate.lua), [`Lib/atlasinstall.lua`](./Lib/atlasinstall.lua)
+- startup/install flow: [`AtlasOS/installer.lua`](./AtlasOS/installer.lua), [`AtlasOS/installer_gate.lua`](./AtlasOS/installer_gate.lua), [`lib/atlasinstall.lua`](./lib/atlasinstall.lua)
 - built-in apps: [`AtlasOS/apps/`](./AtlasOS/apps/)
-- shared app metadata/runtime helpers: [`Lib/appinfo.lua`](./Lib/appinfo.lua), [`Lib/startmenu.lua`](./Lib/startmenu.lua)
+- shared app metadata/runtime helpers: [`lib/appinfo.lua`](./lib/appinfo.lua), [`lib/startmenu.lua`](./lib/startmenu.lua)
 - package format: [`AtlasOS/APPINFO.md`](./AtlasOS/APPINFO.md)
 
 ## Documentation map
