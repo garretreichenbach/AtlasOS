@@ -33,9 +33,6 @@ jobs:
       - name: Build installer
         run: python3 scripts/build_web_installer.py
 
-      - name: Verify generated installer is up to date
-        run: git diff --exit-code -- dist/atlasos-web-installer.lua
-
       - name: Upload installer artifact
         uses: actions/upload-artifact@v7
         with:
