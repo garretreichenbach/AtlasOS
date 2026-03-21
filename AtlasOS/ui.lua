@@ -82,17 +82,10 @@ end
 
 -- Logical grid in character cells; bitmap gfx maps cells → pixels via atlasgfx.
 local function size_get()
-	if UI._gfx_sized and gfx and type(gfx.getWidth) == "function" and type(gfx.getHeight) == "function" then
-		if atlasgfx.is_bitmap() then
-			local cw, ch = atlasgfx.canvas_cells()
-			if cw and ch and cw >= 8 and ch >= 8 then return cw, ch end
-		end
-		local ok, gw, gh = pcall(function()
-			return gfx.getWidth(), gfx.getHeight()
-		end)
-		if ok and type(gw) == "number" and type(gh) == "number" and gw >= 8 and gh >= 8 then
-			return math.floor(gw), math.floor(gh)
-		end
+	-- After hard cutover, rely on atlasgfx for canvas metrics once sized.
+	if UI._gfx_sized then
+		local cw, ch = atlasgfx.canvas_cells()
+		if cw and ch and cw >= 8 and ch >= 8 then return cw, ch end
 	end
 	return CANVAS_DEFAULT_W, CANVAS_DEFAULT_H
 end
@@ -101,13 +94,9 @@ local function size_set(w, h)
 	w = math.max(1, math.min(240, math.floor(w or CANVAS_DEFAULT_W)))
 	h = math.max(1, math.min(120, math.floor(h or CANVAS_DEFAULT_H)))
 	atlasgfx.init(UI._gfx_conf or read_gfx_conf())
-	if atlasgfx.is_bitmap() then
-		atlasgfx.set_canvas_from_cells(w, h)
-		UI._gfx_sized = true
-	else
-		-- No legacy canvas-size API available; mark sized anyway so init proceeds.
-		UI._gfx_sized = true
-	end
+	-- Hard cutover: set canvas via atlasgfx (will assert if host gfx lacks capability).
+	atlasgfx.set_canvas_from_cells(w, h)
+	UI._gfx_sized = true
 end
 
 local UI = {
@@ -775,7 +764,10 @@ function UI.handle_event(e)
 	end
 	if e.type == "mouse" then
 		local cx, cy
-		if atlasgfx.is_bitmap() and e.insideCanvas and type(e.uiX) == "number" and type(e.uiY) == "number" then
+		-- Use canvas pixel coordinates when available (uiX/uiY) and fall back to
+		-- input.pixel_to_cell otherwise. Under hard cutover, atlasgfx provides
+		-- consistent pixel-to-cell mapping.
+		if e.insideCanvas and type(e.uiX) == "number" and type(e.uiY) == "number" then
 			cx, cy = atlasgfx.pixel_to_cell_rel(e.uiX, e.uiY)
 			cx = math.max(1, math.min(UI.W, cx))
 			cy = math.max(1, math.min(UI.H, cy))

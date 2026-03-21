@@ -19,17 +19,14 @@ end
 local FONT = dofile("/home/lib/font8x8_basic.lua")
 
 local atlasgfx = {
-  _bitmap = false,
   cell_w = 8,
   cell_h = 14,
   layer = "atlas",
 }
 
-local function probe_bitmap_gfx()
-  -- Some hosts can throw during early boot probe draws even though gfx is valid.
-  -- Treat rect availability as capability and let draw calls use pcall individually.
-  return gfx ~= nil and type(gfx.rect) == "function"
-end
+-- Phase 1 hard cutover: require the new luamade-compatible `gfx` drawing API.
+-- This adapter is strict: if the expected drawing primitives are not present
+-- atlasgfx.init will raise an error so the migration is obvious and fails fast.
 
 local NAMED = {
   black = { 0.02, 0.02, 0.02, 1 },
@@ -78,23 +75,23 @@ end
 
 function atlasgfx.init(conf)
   conf = conf or {}
-  local is_new = probe_bitmap_gfx()
-  atlasgfx._bitmap = is_new and true or false
   local sc = tonumber(conf.cell_scale) or 1
   sc = math.max(0.5, math.min(4, sc))
   atlasgfx.cell_w = math.max(4, math.floor(8 * sc + 0.5))
   atlasgfx.cell_h = math.max(6, math.floor(14 * sc + 0.5))
-  if atlasgfx._bitmap and gfx and type(gfx.createLayer) == "function" and not atlasgfx._layer_ready then
-    pcall(gfx.createLayer, atlasgfx.layer, 0)
-    atlasgfx._layer_ready = true
-  end
-  if not atlasgfx._bitmap then
-    atlasgfx._layer_ready = false
-  end
+  -- Ensure the host provides the expected drawing primitives. This is a
+  -- strict, luamade-only contract for the hard cutover.
+  assert(type(gfx) == "table", "atlasgfx.init: required global 'gfx' is missing - install the new luamade graphics library")
+  assert(type(gfx.rect) == "function", "atlasgfx.init: gfx.rect missing")
+  assert(type(gfx.getWidth) == "function" and type(gfx.getHeight) == "function", "atlasgfx.init: gfx.getWidth/getHeight missing")
+  -- setCanvasSize and clear are optional but preferred; if missing, callers may fail later.
 end
 
 function atlasgfx.is_bitmap()
-  return atlasgfx._bitmap == true
+  -- Hard-cutover: treat the drawing surface as bitmap/cell-backed. Callers
+  -- that branch on this will see consistent behavior and should be migrated
+  -- in Phase 2 to remove the conditional logic.
+  return true
 end
 
 function atlasgfx.set_canvas_from_cells(cols, rows)
@@ -102,65 +99,55 @@ function atlasgfx.set_canvas_from_cells(cols, rows)
   rows = math.max(1, math.floor(rows or 24))
   local pw = cols * atlasgfx.cell_w
   local ph = rows * atlasgfx.cell_h
-  if atlasgfx._bitmap and gfx and type(gfx.setCanvasSize) == "function" then
-    pcall(gfx.setCanvasSize, pw, ph)
-  end
+  -- Resize the underlying drawing canvas. Fail if host does not expose the API.
+  assert(type(gfx.setCanvasSize) == "function", "atlasgfx.set_canvas_from_cells: gfx.setCanvasSize missing")
+  gfx.setCanvasSize(pw, ph)
   return pw, ph
 end
 
 function atlasgfx.canvas_cells()
-  if not gfx or type(gfx.getWidth) ~= "function" then return nil, nil end
-  local ok, gw, gh = pcall(function()
-    return gfx.getWidth(), gfx.getHeight()
-  end)
-  if not ok or type(gw) ~= "number" then return nil, nil end
-  if atlasgfx._bitmap then
-    local cw = atlasgfx.cell_w > 0 and gw / atlasgfx.cell_w or gw
-    local ch = atlasgfx.cell_h > 0 and gh / atlasgfx.cell_h or gh
-    return math.max(8, math.floor(cw)), math.max(8, math.floor(ch))
-  end
-  return math.floor(gw), math.floor(gh)
+  assert(type(gfx.getWidth) == "function" and type(gfx.getHeight) == "function", "atlasgfx.canvas_cells: gfx.getWidth/getHeight missing")
+  local gw, gh = gfx.getWidth(), gfx.getHeight()
+  assert(type(gw) == "number" and type(gh) == "number", "atlasgfx.canvas_cells: invalid canvas dimensions")
+  local cw = atlasgfx.cell_w > 0 and gw / atlasgfx.cell_w or gw
+  local ch = atlasgfx.cell_h > 0 and gh / atlasgfx.cell_h or gh
+  return math.max(8, math.floor(cw)), math.max(8, math.floor(ch))
 end
 
 function atlasgfx.canvas_pixels_for_input()
-  if not gfx then return nil, nil end
-  local ok, gw, gh = pcall(function()
-    return gfx.getWidth(), gfx.getHeight()
-  end)
-  if ok and gw and gh and gw > 0 and gh > 0 then return gw, gh end
+  assert(type(gfx.getWidth) == "function" and type(gfx.getHeight) == "function", "atlasgfx.canvas_pixels_for_input: gfx.getWidth/getHeight missing")
+  local gw, gh = gfx.getWidth(), gfx.getHeight()
+  if gw and gh and gw > 0 and gh > 0 then return gw, gh end
   return nil, nil
 end
 
 function atlasgfx.begin_frame()
-  if not gfx then return end
-  if atlasgfx._bitmap then
-    if type(gfx.clear) == "function" then pcall(gfx.clear) end
-    if type(gfx.setLayer) == "function" then pcall(gfx.setLayer, atlasgfx.layer) end
-  end
+  assert(type(gfx.clear) == "function", "atlasgfx.begin_frame: gfx.clear missing")
+  gfx.clear()
+  -- If host provides layers, attempt to set a default layer (non-fatal).
+  if type(gfx.setLayer) == "function" then gfx.setLayer(atlasgfx.layer) end
 end
 
 function atlasgfx.fillRect(x, y, w, h, bg_color)
-  if not atlasgfx._bitmap then return end
   x, y, w, h = math.floor(x or 1), math.floor(y or 1), math.floor(w or 1), math.floor(h or 1)
   if w < 1 or h < 1 then return end
   local px, py = atlasgfx.cell_to_pixel(x, y)
   local pw, ph = w * atlasgfx.cell_w, h * atlasgfx.cell_h
   local c = color_to_rgba(bg_color, { 0, 0, 0, 1 })
-  pcall(gfx.rect, px, py, pw, ph, c[1], c[2], c[3], c[4], true)
+  gfx.rect(px, py, pw, ph, c[1], c[2], c[3], c[4], true)
 end
 
 function atlasgfx.rect(x, y, w, h, fg_color)
-  if not atlasgfx._bitmap then return end
   x, y, w, h = math.floor(x or 1), math.floor(y or 1), math.floor(w or 1), math.floor(h or 1)
   if w < 2 or h < 2 then return end
   local px, py = atlasgfx.cell_to_pixel(x, y)
   local pw, ph = w * atlasgfx.cell_w, h * atlasgfx.cell_h
   local c = color_to_rgba(fg_color, { 1, 1, 1, 1 })
-  pcall(gfx.rect, px, py, pw, ph, c[1], c[2], c[3], c[4], false)
+  gfx.rect(px, py, pw, ph, c[1], c[2], c[3], c[4], false)
 end
 
 function atlasgfx.text(x, y, str, fg_color, bg_color)
-  if not atlasgfx._bitmap then return end
+  -- Render a string into cell grid using the 8x8 pixel font.
   str = tostring(str or "")
   x, y = math.floor(x or 1), math.floor(y or 1)
   local cf = color_to_rgba(fg_color, { 1, 1, 1, 1 })
@@ -172,7 +159,7 @@ function atlasgfx.text(x, y, str, fg_color, bg_color)
   for i = 1, #str do
     local col = x + i - 1
     local px, py = atlasgfx.cell_to_pixel(col, y)
-    pcall(gfx.rect, px, py, atlasgfx.cell_w, atlasgfx.cell_h, br, bgc, bb, ba, true)
+    gfx.rect(px, py, atlasgfx.cell_w, atlasgfx.cell_h, br, bgc, bb, ba, true)
     local byte = str:byte(i) or 32
     if byte < 0 or byte > 127 then byte = 63 end
     local g = FONT[byte + 1]
@@ -183,7 +170,7 @@ function atlasgfx.text(x, y, str, fg_color, bg_color)
         local bits = g[row]
         for colp = 0, 7 do
           if bit_pixel(bits, colp) == 1 then
-            pcall(gfx.rect, ox + colp * scale, oy + (row - 1) * scale, scale, scale, rf, gf, bf, af, true)
+            gfx.rect(ox + colp * scale, oy + (row - 1) * scale, scale, scale, rf, gf, bf, af, true)
           end
         end
       end

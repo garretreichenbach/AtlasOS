@@ -57,9 +57,8 @@ local W, H = TARGET_W, TARGET_H
 
 local function sync_canvas()
 	atlasgfx.init(read_gfx_conf())
-	if atlasgfx.is_bitmap() and gfx and type(gfx.setCanvasSize) == "function" then
-		atlasgfx.set_canvas_from_cells(TARGET_W, TARGET_H)
-	end
+	-- Hard cutover: set canvas via atlasgfx and update input pixel sizing.
+	atlasgfx.set_canvas_from_cells(TARGET_W, TARGET_H)
 	local cw, ch = atlasgfx.canvas_cells()
 	if cw and ch then W, H = cw, ch end
 	local pw, ph = atlasgfx.canvas_pixels_for_input()
@@ -247,7 +246,7 @@ local function handle_mouse(e)
 		return nil
 	end
 	local cx, cy
-	if atlasgfx.is_bitmap() and e.insideCanvas and type(e.uiX) == "number" and type(e.uiY) == "number" then
+	if e.insideCanvas and type(e.uiX) == "number" and type(e.uiY) == "number" then
 		cx, cy = atlasgfx.pixel_to_cell_rel(e.uiX, e.uiY)
 	else
 		cx, cy = input.pixel_to_cell(e.x, e.y, W, H)

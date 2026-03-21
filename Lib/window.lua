@@ -280,11 +280,6 @@ function window.Desktop.paint(d, gw, gh)
     local cw, ch = atlasgfx.canvas_cells()
     if cw and ch then
       gw, gh = cw, ch
-    elseif gfx and type(gfx.getWidth) == "function" then
-      local ok, w, h = pcall(function()
-        return gfx.getWidth(), gfx.getHeight()
-      end)
-      if ok and w and h then gw, gh = w, h end
     end
   end
   gw = gw or 80
