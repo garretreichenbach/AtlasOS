@@ -1,0 +1,115 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'AtlasOS/**'
+      - 'lib/**'
+      - 'scripts/build_web_installer.py'
+      - '.github/workflows/deploy-to-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Build web installer
+        run: python3 scripts/build_web_installer.py
+
+      - name: Create installer index
+        run: |
+          mkdir -p _site
+          cp dist/atlasos-web-installer.lua _site/
+
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>AtlasOS Web Installer</title>
+              <style>
+                  body { font-family: monospace; max-width: 800px; margin: 40px auto; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
+                  h1 { color: #4ec9b0; }
+                  code { background: #2d2d2d; padding: 2px 6px; border-radius: 3px; }
+                  .command-box { background: #2d2d2d; border: 1px solid #444; padding: 15px; margin: 20px 0; border-radius: 5px; }
+                  a { color: #569cd6; text-decoration: none; }
+                  a:hover { text-decoration: underline; }
+                  .file-list { margin: 20px 0; }
+                  .file-item { padding: 8px 0; border-bottom: 1px solid #444; }
+                  .file-item:last-child { border-bottom: none; }
+              </style>
+          </head>
+          <body>
+              <h1>⚙️ AtlasOS Web Installer</h1>
+              <p>One-command installation for LuaMade computers.</p>
+
+              <h2>Installation</h2>
+              <p>In your LuaMade game, run this command:</p>
+              <div class="command-box">
+                  <code>httpget https://YOURUSERNAME.github.io/AtlasOS/atlasos-web-installer.lua /etc/startup.lua && reboot</code>
+              </div>
+
+              <p><strong>Note:</strong> Replace <code>YOURUSERNAME</code> with your actual GitHub username.</p>
+
+              <h2>What it does</h2>
+              <ol>
+                  <li>Downloads the complete AtlasOS installer bundle</li>
+                  <li>Extracts all required files to your game filesystem</li>
+                  <li>Installs the AtlasOS startup hook</li>
+                  <li>Automatically launches AtlasOS on reboot</li>
+              </ol>
+
+              <h2>Installer Files</h2>
+              <div class="file-list">
+                  <div class="file-item">
+                      <strong><a href="atlasos-web-installer.lua">atlasos-web-installer.lua</a></strong>
+                      <p style="margin: 5px 0 0 0; font-size: 0.9em;">Complete AtlasOS bundle (includes all OS and library files)</p>
+                  </div>
+              </div>
+
+              <h2>Troubleshooting</h2>
+              <ul>
+                  <li>If the installer fails, ensure your game has filesystem access via <code>fs.read()</code> and <code>fs.write()</code></li>
+                  <li>Check the game console for error messages</li>
+                  <li>Previous startup files are backed up to <code>/etc/startup.lua.atlasos_backup</code></li>
+              </ul>
+
+              <h2>Source</h2>
+              <p><a href="https://github.com/YOURUSERNAME/AtlasOS">View on GitHub</a></p>
+          </body>
+          </html>
+          EOF
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
