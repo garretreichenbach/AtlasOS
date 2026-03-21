@@ -1,12 +1,12 @@
 --[[
-  window.lua — window chrome + desktop (LuaMade gfx via atlasgfx facade).
+  window.lua — window chrome + desktop (LuaMade gfx via atlas_draw).
 
   Desktop: add / remove / bring_to_front / set_focus / focus_next / focus_prev
   Title bar: minimize (_), maximize (^/v), close (x). hit_chrome(win, cx, cy).
   Text: draw_text_line, draw_text_lines (clipped to client area)
 ]]
 
-local atlasgfx = dofile("/home/lib/atlasgfx.lua")
+local draw = dofile("/home/lib/atlas_draw.lua")
 local window = {}
 
 local function clamp_title(s, maxLen)
@@ -56,23 +56,23 @@ end
 function Win:paint()
   if self.minimized then return end
   local x, y, w, h = self.x, self.y, self.w, self.h
-  atlasgfx.fillRect(x, y, w, h, self.body_bg)
-  atlasgfx.rect(x, y, w, h, self.body_fg)
-  atlasgfx.fillRect(x + 1, y + 1, w - 2, 1, self.title_bg)
+  draw.fillRect(x, y, w, h, self.body_bg)
+  draw.rect(x, y, w, h, self.body_fg)
+  draw.fillRect(x + 1, y + 1, w - 2, 1, self.title_bg)
   local btn = title_btn_count(w)
   local tmax = math.max(1, w - 4 - btn)
   local title_prefix = self.focused and "*" or " "
-  atlasgfx.text(x + 2, y + 1, title_prefix .. clamp_title(self.title, tmax), self.title_fg, self.title_bg)
+  draw.text(x + 2, y + 1, title_prefix .. clamp_title(self.title, tmax), self.title_fg, self.title_bg)
   if btn >= 3 then
-    atlasgfx.text(x + w - 4, y + 1, "_", self.title_fg, self.title_bg)
+    draw.text(x + w - 4, y + 1, "_", self.title_fg, self.title_bg)
   end
   if btn >= 2 then
-    atlasgfx.text(x + w - 3, y + 1, self.maximized and "v" or "^", self.title_fg, self.title_bg)
+    draw.text(x + w - 3, y + 1, self.maximized and "v" or "^", self.title_fg, self.title_bg)
   end
-  atlasgfx.text(x + w - 2, y + 1, "x", self.title_fg, self.title_bg)
+  draw.text(x + w - 2, y + 1, "x", self.title_fg, self.title_bg)
   local cw, ch = self:client_w(), self:client_h()
   if cw >= 1 and ch >= 1 then
-    atlasgfx.fillRect(self:client_x(), self:client_y(), cw, ch, self.client_bg)
+    draw.fillRect(self:client_x(), self:client_y(), cw, ch, self.client_bg)
   end
 end
 
@@ -131,7 +131,7 @@ function window.draw_text_line(win, rel_col, rel_row, text, fg, bg)
   local maxc = cw - rel_col
   text = tostring(text)
   if #text > maxc then text = text:sub(1, maxc) end
-  atlasgfx.text(win:client_x() + rel_col, win:client_y() + rel_row, text, fg or win.client_fg, bg or win.client_bg)
+  draw.text(win:client_x() + rel_col, win:client_y() + rel_row, text, fg or win.client_fg, bg or win.client_bg)
 end
 
 --- Fill client with lines[start_line], lines[start_line+1], … (1-based index).
@@ -146,7 +146,7 @@ function window.draw_text_lines(win, lines, start_line)
     if line then
       line = tostring(line)
       if #line > cw then line = line:sub(1, cw) end
-      atlasgfx.text(win:client_x(), win:client_y() + row, line, win.client_fg, win.client_bg)
+      draw.text(win:client_x(), win:client_y() + row, line, win.client_fg, win.client_bg)
     end
   end
 end
@@ -267,7 +267,7 @@ end
 function window.Desktop.paint_region(d, gx, gy, gw, gh)
   gx, gy = math.max(1, math.floor(gx)), math.max(1, math.floor(gy))
   gw, gh = math.max(1, math.floor(gw)), math.max(1, math.floor(gh))
-  atlasgfx.fillRect(gx, gy, gw, gh, d.bg_bg)
+  draw.fillRect(gx, gy, gw, gh, d.bg_bg)
   for i = 1, #d._windows do
     if not d._windows[i].minimized then
       d._windows[i]:paint()
@@ -277,7 +277,7 @@ end
 
 function window.Desktop.paint(d, gw, gh)
   if not gw or not gh then
-    local cw, ch = atlasgfx.canvas_cells()
+    local cw, ch = draw.canvas_cells()
     if cw and ch then
       gw, gh = cw, ch
     end

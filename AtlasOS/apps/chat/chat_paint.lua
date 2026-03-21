@@ -9,7 +9,7 @@ if not factory then
 		local UI = ctx.UI
 		local window = ctx.window
 		local widgets = ctx.widgets
-		local atlasgfx = ctx.atlasgfx
+		local draw = ctx.draw
 		local appkit = dofile("/home/lib/appkit.lua")
 		local chatnet = dofile("/home/lib/atlas_chat_net.lua")
 
@@ -383,10 +383,10 @@ if not factory then
 				if row > list_bottom then break end
 				local lab = srv.name:sub(1, w_srv - 1)
 				if st.sel_srv == i then
-					atlasgfx.fillRect(cx0, cy0 + row, w_srv, 1, win.client_fg)
-					atlasgfx.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)), win.client_bg, win.client_fg)
+					draw.fillRect(cx0, cy0 + row, w_srv, 1, win.client_fg)
+					draw.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)), win.client_bg, win.client_fg)
 				else
-					atlasgfx.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)), win.client_fg, win.client_bg)
+					draw.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)), win.client_fg, win.client_bg)
 				end
 				add_hit({ x0 = 0, x1 = w_srv - 1, y0 = row, y1 = row, kind = "srv", idx = i })
 			end
@@ -400,10 +400,10 @@ if not factory then
 					if row > list_bottom then break end
 					local lab = ("#" .. cn):sub(1, w_ch - 1)
 					if st.sel_ch == j then
-						atlasgfx.fillRect(cx0 + w_srv, cy0 + row, w_ch, 1, win.client_fg)
-						atlasgfx.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)), win.client_bg, win.client_fg)
+						draw.fillRect(cx0 + w_srv, cy0 + row, w_ch, 1, win.client_fg)
+						draw.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)), win.client_bg, win.client_fg)
 					else
-						atlasgfx.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)), win.client_fg, win.client_bg)
+						draw.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)), win.client_fg, win.client_bg)
 					end
 					add_hit({
 						x0 = w_srv,
@@ -426,18 +426,18 @@ if not factory then
 				if line then
 					line = tostring(line)
 					if #line > msg_w then line = line:sub(1, msg_w) end
-					atlasgfx.text(cx0 + msg_x, cy0 + row, line, win.client_fg, win.client_bg)
+					draw.text(cx0 + msg_x, cy0 + row, line, win.client_fg, win.client_bg)
 				end
 			end
 
 			local hint = st.status
 			if #hint > cw - 2 then hint = hint:sub(1, cw - 5) .. "…" end
-			atlasgfx.text(cx0, cy0 + status_row, hint .. string.rep(" ", math.max(0, cw - #hint)), "bright_black", win.client_bg)
+			draw.text(cx0, cy0 + status_row, hint .. string.rep(" ", math.max(0, cw - #hint)), "bright_black", win.client_bg)
 
 			local prompt = st.prompt and ("?" .. (st.prompt.step or "") .. ") ") or ""
 			local buf = prompt .. st.compose
 			if #buf > cw - 3 then buf = "…" .. buf:sub(-(cw - 4)) end
-			atlasgfx.text(cx0, cy0 + input_row, "> " .. buf .. string.rep(" ", math.max(0, cw - #buf - 2)), "bright_white", win.client_bg)
+			draw.text(cx0, cy0 + input_row, "> " .. buf .. string.rep(" ", math.max(0, cw - #buf - 2)), "bright_white", win.client_bg)
 
 			shell:paint_dropdown(win)
 		end

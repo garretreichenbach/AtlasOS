@@ -13,7 +13,7 @@
   ctx in on_command: { source = "menubar" | "toolbar", menu_index?, item_label? }
 ]]
 
-local atlasgfx = dofile("/home/lib/atlasgfx.lua")
+local draw = dofile("/home/lib/atlas_draw.lua")
 local widgets = dofile("/home/lib/widgets.lua")
 
 local appkit = {}
@@ -91,11 +91,11 @@ function appkit.shell(opts)
     local row = 0
     local cy0 = win:client_y()
     local cx0 = win:client_x()
-    atlasgfx.fillRect(cx0, cy0 + row, cw, 1, self.menubar_bg)
+    draw.fillRect(cx0, cy0 + row, cw, 1, self.menubar_bg)
     for i, m in ipairs(self.menubar) do
       local lab = " " .. clamp(m.label, 20) .. " "
       if x + #lab > cw then break end
-      atlasgfx.text(cx0 + x, cy0 + row, lab, self.menubar_fg, self.menubar_bg)
+      draw.text(cx0 + x, cy0 + row, lab, self.menubar_fg, self.menubar_bg)
       self._menu_layout[i] = { x0 = x, x1 = x + #lab - 1, label = m.label }
       self._bar_zones[#self._bar_zones + 1] = {
         x0 = x,
@@ -117,7 +117,7 @@ function appkit.shell(opts)
     local cw, ch = win:client_w(), win:client_h()
     if row >= ch then return start_row end
     local cx0, cy0 = win:client_x(), win:client_y()
-    atlasgfx.fillRect(cx0, cy0 + row, cw, 1, self.toolbar_bg)
+    draw.fillRect(cx0, cy0 + row, cw, 1, self.toolbar_bg)
     local x = 0
     for _, b in ipairs(self.toolbar) do
       local w = math.max(3, math.floor(b.w or (#tostring(b.label or "") + 4)))
@@ -177,12 +177,12 @@ function appkit.shell(opts)
     end
 
     local cx0, cy0 = win:client_x(), win:client_y()
-    atlasgfx.rect(cx0 + x0, cy0 + y0, box_w, box_h, self.dd_border)
+    draw.rect(cx0 + x0, cy0 + y0, box_w, box_h, self.dd_border)
     for i, it in ipairs(items) do
       if i + 1 >= box_h then break end
       local line = " " .. clamp(it.label, box_w - 2)
       line = line .. string.rep(" ", math.max(0, box_w - #line))
-      atlasgfx.text(cx0 + x0, cy0 + y0 + i, line:sub(1, box_w), self.dd_fg, self.dd_bg)
+      draw.text(cx0 + x0, cy0 + y0 + i, line:sub(1, box_w), self.dd_fg, self.dd_bg)
       self._dd_zones[#self._dd_zones + 1] = {
         x0 = x0,
         y0 = y0 + i,

@@ -25,7 +25,7 @@ if not factory then
   })
 
   return function(win)
-    local atlasgfx = dofile("/home/lib/atlasgfx.lua")
+    local draw = dofile("/home/lib/atlas_draw.lua")
     UI.editor_ensure()
     local st = UI._editor
     local cw, ch = win:client_w(), win:client_h()
@@ -72,7 +72,7 @@ if not factory then
       end
       if #disp > budget then disp = disp:sub(1, budget) end
       local line = prefix .. disp
-      atlasgfx.text(win:client_x(), win:client_y() + body_start + r, line .. string.rep(" ", cw - #line), win.client_fg, win.client_bg)
+      draw.text(win:client_x(), win:client_y() + body_start + r, line .. string.rep(" ", cw - #line), win.client_fg, win.client_bg)
     end
 
     shell:paint_dropdown(win)

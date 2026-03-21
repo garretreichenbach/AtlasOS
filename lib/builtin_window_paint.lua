@@ -5,12 +5,12 @@
 
 local M = {}
 
---- @param ctx { UI, window, widgets, atlasgfx, appkit, atlastheme, VERSION, paths, deskutil, startmenu }
+--- @param ctx { UI, window, widgets, draw, appkit, atlastheme, VERSION, paths, deskutil, startmenu }
 function M.create(ctx)
 	local UI = ctx.UI
 	local window = ctx.window
 	local widgets = ctx.widgets
-	local atlasgfx = ctx.atlasgfx
+	local draw = ctx.draw
 	local appkit = ctx.appkit
 	local atlastheme = ctx.atlastheme
 	local VERSION = ctx.VERSION
@@ -103,7 +103,7 @@ function M.create(ctx)
 					UI = UI,
 					widgets = widgets,
 					window = window,
-					atlasgfx = atlasgfx,
+					draw = draw,
 					atlastheme = atlastheme,
 					VERSION = VERSION,
 					deskutil = deskutil,

@@ -3,29 +3,11 @@
   Writes /etc/AtlasOS/setup_complete then chains to boot_desktop.lua.
 ]]
 
-local atlasgfx = dofile("/home/lib/atlasgfx.lua")
+local draw = dofile("/home/lib/atlas_draw.lua")
 local input = dofile("/home/lib/input.lua")
 local atlastheme = dofile("/home/lib/atlastheme.lua")
 local atlasprofile = dofile("/home/lib/atlasprofile.lua")
 local atlasinstall = dofile("/home/lib/atlasinstall.lua")
-
-local GFX_CONF_PATH = "/etc/AtlasOS/gfx.conf"
-
-local function read_gfx_conf()
-	local conf = { cell_scale = 1.5 }
-	if not fs or not fs.read then return conf end
-	local ok, raw = pcall(fs.read, GFX_CONF_PATH)
-	if not ok or not raw or tostring(raw):gsub("%s", "") == "" then return conf end
-	for line in tostring(raw):gmatch("[^\r\n]+") do
-		local n = line:match("^%s*cell_scale%s*=%s*([0-9.]+)%s*$")
-			or line:match("^%s*scale%s*=%s*([0-9.]+)%s*$")
-		if n then
-			n = tonumber(n)
-			if n then conf.cell_scale = math.max(0.5, math.min(4, n)) end
-		end
-	end
-	return conf
-end
 
 local TARGET_W, TARGET_H = 120, 72
 
@@ -56,57 +38,56 @@ local state = {
 local W, H = TARGET_W, TARGET_H
 
 local function sync_canvas()
-	atlasgfx.init(read_gfx_conf())
-	-- Hard cutover: set canvas via atlasgfx and update input pixel sizing.
-	atlasgfx.set_canvas_from_cells(TARGET_W, TARGET_H)
-	local cw, ch = atlasgfx.canvas_cells()
+	draw.init()
+	draw.set_canvas_from_cells(TARGET_W, TARGET_H)
+	local cw, ch = draw.canvas_cells()
 	if cw and ch then W, H = cw, ch end
-	local pw, ph = atlasgfx.canvas_pixels_for_input()
+	local pw, ph = draw.canvas_pixels_for_input()
 	if pw and ph then input.set_canvas_pixels(pw, ph) end
 end
 
 local function draw_center_text(row, msg, fg, bg)
 	msg = tostring(msg or "")
 	local pad = math.max(1, math.floor((W - #msg) / 2))
-	atlasgfx.text(pad, row, msg, fg, bg)
+	draw.text(pad, row, msg, fg, bg)
 end
 
 local function draw_loading()
-	atlasgfx.begin_frame()
-	atlasgfx.fillRect(1, 1, W, H, "blue")
+	draw.begin_frame()
+	draw.fillRect(1, 1, W, H, "blue")
 	draw_center_text(3, "AtlasOS", "bright_yellow", "blue")
 	draw_center_text(5, state.load_title ~= "" and state.load_title or "Working…", "bright_white", "blue")
 	local det = state.load_detail or ""
 	if #det > W - 4 then
 		det = det:sub(1, math.max(1, W - 7)) .. "…"
 	end
-	atlasgfx.text(2, 6, det, "bright_cyan", "blue")
+	draw.text(2, 6, det, "bright_cyan", "blue")
 	local hint = state.load_hint or ""
 	if hint ~= "" and H >= 10 then
 		if #hint > W - 4 then
 			hint = hint:sub(1, math.max(1, W - 7)) .. "…"
 		end
-		atlasgfx.text(2, 7, hint, "bright_black", "blue")
+		draw.text(2, 7, hint, "bright_black", "blue")
 	end
 	local bar_row = H >= 12 and 9 or 8
 	local bar_x, bar_y, bar_w = 8, bar_row, W - 16
-	atlasgfx.fillRect(bar_x, bar_y, bar_w, 1, "bright_white")
+	draw.fillRect(bar_x, bar_y, bar_w, 1, "bright_white")
 	local inner = math.max(0, math.floor(bar_w * state.progress))
 	if inner > 0 then
-		atlasgfx.fillRect(bar_x, bar_y, inner, 1, "bright_green")
+		draw.fillRect(bar_x, bar_y, inner, 1, "bright_green")
 	end
 	local pct = math.floor(state.progress * 100 + 0.5)
 	draw_center_text(bar_row + 3, tostring(pct) .. "%", "bright_cyan", "blue")
 end
 
 local function draw_error()
-	atlasgfx.begin_frame()
-	atlasgfx.fillRect(1, 1, W, H, "red")
+	draw.begin_frame()
+	draw.fillRect(1, 1, W, H, "red")
 	draw_center_text(3, "AtlasOS — installation failed", "bright_yellow", "red")
 	local row = 6
 	for _, p in ipairs(state.missing) do
 		if row < H - 4 then
-			atlasgfx.text(4, row, p:sub(1, math.max(1, W - 8)), "bright_white", "red")
+			draw.text(4, row, p:sub(1, math.max(1, W - 8)), "bright_white", "red")
 			row = row + 1
 		end
 	end
@@ -115,14 +96,14 @@ local function draw_error()
 end
 
 local function draw_setup()
-	atlasgfx.begin_frame()
+	draw.begin_frame()
 	local bg = state.theme == "dark" and "black" or "white"
 	local fg = state.theme == "dark" and "bright_white" or "black"
-	atlasgfx.fillRect(1, 1, W, H, bg)
+	draw.fillRect(1, 1, W, H, bg)
 	draw_center_text(2, "Welcome to AtlasOS", "bright_cyan", bg)
 	draw_center_text(4, "Choose your name and theme", fg, bg)
 
-	atlasgfx.text(4, 7, "Username" .. (state.focus == 1 and " ◄" or ""), fg, bg)
+	draw.text(4, 7, "Username" .. (state.focus == 1 and " ◄" or ""), fg, bg)
 	local show = state.username
 	if state.focus == 1 then
 		local blink = (math.floor(state.blink_t / 400) % 2) == 0
@@ -130,9 +111,9 @@ local function draw_setup()
 	else
 		show = show .. " "
 	end
-	atlasgfx.text(4, 8, show:sub(1, math.max(1, W - 10)), "black", "bright_white")
+	draw.text(4, 8, show:sub(1, math.max(1, W - 10)), "black", "bright_white")
 
-	atlasgfx.text(4, 11, "Theme" .. (state.focus == 2 and " ◄" or ""), fg, bg)
+	draw.text(4, 11, "Theme" .. (state.focus == 2 and " ◄" or ""), fg, bg)
 	local function paint_theme_chip(col, label, which)
 		local on = (state.theme == which)
 		local sel = (state.focus == 2)
@@ -142,7 +123,7 @@ local function draw_setup()
 		else
 			cfg, cbg = fg, sel and "bright_black" or bg
 		end
-		atlasgfx.text(col, 12, "[ " .. label .. " ]", cfg, cbg)
+		draw.text(col, 12, "[ " .. label .. " ]", cfg, cbg)
 	end
 	paint_theme_chip(6, "Light", "light")
 	paint_theme_chip(24, "Dark", "dark")
@@ -152,7 +133,7 @@ local function draw_setup()
 	draw_center_text(15, "[  Continue — Enter  ]", cont_fg, cont_bg)
 
 	local hint_fg = state.theme == "dark" and "bright_cyan" or "bright_black"
-	atlasgfx.text(3, H - 1, "Tab next field  Enter: save on Continue  Typing: name", hint_fg, bg)
+	draw.text(3, H - 1, "Tab next field  Enter: save on Continue  Typing: name", hint_fg, bg)
 end
 
 local function redraw()
@@ -163,6 +144,7 @@ local function redraw()
 	else
 		draw_setup()
 	end
+	draw.end_frame()
 end
 
 local function finish_setup()
@@ -247,7 +229,7 @@ local function handle_mouse(e)
 	end
 	local cx, cy
 	if e.insideCanvas and type(e.uiX) == "number" and type(e.uiY) == "number" then
-		cx, cy = atlasgfx.pixel_to_cell_rel(e.uiX, e.uiY)
+		cx, cy = draw.pixel_to_cell_rel(e.uiX, e.uiY)
 	else
 		cx, cy = input.pixel_to_cell(e.x, e.y, W, H)
 	end

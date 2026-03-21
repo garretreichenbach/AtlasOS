@@ -6,7 +6,7 @@ if not factory then
 		local UI = ctx.UI
 		local window = ctx.window
 		local widgets = ctx.widgets
-		local atlasgfx = ctx.atlasgfx
+		local draw = ctx.draw
 		local atlastheme = ctx.atlastheme
 		local VERSION = ctx.VERSION
 		local deskutil = ctx.deskutil
@@ -46,9 +46,9 @@ if not factory then
 				.. "x"
 				.. tostring(UI.H)
 				.. "  cell px "
-				.. tostring(atlasgfx.cell_w)
+				.. tostring(draw.cell_w)
 				.. "x"
-				.. tostring(atlasgfx.cell_h)
+				.. tostring(draw.cell_h)
 			local lines = {
 				"--- System ---",
 				"AtlasOS " .. VERSION .. " (Custom OS for LuaMade Computers)",

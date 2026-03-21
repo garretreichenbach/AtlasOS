@@ -44,7 +44,7 @@ if not factory then
   })
 
   return function(win)
-    local atlasgfx = dofile("/home/lib/atlasgfx.lua")
+    local draw = dofile("/home/lib/atlas_draw.lua")
     if not UI._settings_cat then UI._settings_cat = "system" end
     UI._settings_zones = {}
 
@@ -79,7 +79,7 @@ if not factory then
     local cx0, cy0 = win:client_x(), win:client_y()
 
     for r = yB, ch - 1 do
-      atlasgfx.text(cx0 + DIV, cy0 + r, "│", win.client_fg, win.client_bg)
+      draw.text(cx0 + DIV, cy0 + r, "│", win.client_fg, win.client_bg)
     end
 
     window.draw_text_line(win, 1, yB, "Settings", "bright_white")
@@ -90,11 +90,11 @@ if not factory then
       local sel = (UI._settings_cat == c.id)
       local lfg = sel and "black" or win.client_fg
       local lbg = sel and "bright_white" or win.client_bg
-      if sel then atlasgfx.fillRect(cx0, cy0 + row, LW, 1, "bright_white") end
+      if sel then draw.fillRect(cx0, cy0 + row, LW, 1, "bright_white") end
       local line = (sel and "│ " or "  ") .. c.label
       line = line .. string.rep(" ", math.max(0, LW - #line))
       if #line > LW then line = line:sub(1, LW) end
-      atlasgfx.text(cx0, cy0 + row, line, lfg, lbg)
+      draw.text(cx0, cy0 + row, line, lfg, lbg)
       add_zone(0, row, LW - 1, row, "cat:" .. c.id)
       row = row + 1
     end

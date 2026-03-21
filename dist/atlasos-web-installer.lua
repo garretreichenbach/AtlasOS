@@ -77,7 +77,7 @@ local CORE_PATHS = {
 }
 
 local BUNDLE_FILE_COUNT = 48
-local BUNDLE_TOTAL_BYTES = 200355
+local BUNDLE_TOTAL_BYTES = 195420
 local BUNDLE = {
 	{
 		path = [[/home/AtlasOS/APPINFO.md]],
@@ -362,7 +362,7 @@ if not factory then
 		local UI = ctx.UI
 		local window = ctx.window
 		local widgets = ctx.widgets
-		local atlasgfx = ctx.atlasgfx
+		local draw = ctx.draw
 		local appkit = dofile("/home/lib/appkit.lua")
 		local chatnet = dofile("/home/lib/atlas_chat_net.lua")
 
@@ -736,10 +736,10 @@ if not factory then
 				if row > list_bottom then break end
 				local lab = srv.name:sub(1, w_srv - 1)
 				if st.sel_srv == i then
-					atlasgfx.fillRect(cx0, cy0 + row, w_srv, 1, win.client_fg)
-					atlasgfx.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)), win.client_bg, win.client_fg)
+					draw.fillRect(cx0, cy0 + row, w_srv, 1, win.client_fg)
+					draw.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)), win.client_bg, win.client_fg)
 				else
-					atlasgfx.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)), win.client_fg, win.client_bg)
+					draw.text(cx0, cy0 + row, lab .. string.rep(" ", math.max(0, w_srv - #lab)), win.client_fg, win.client_bg)
 				end
 				add_hit({ x0 = 0, x1 = w_srv - 1, y0 = row, y1 = row, kind = "srv", idx = i })
 			end
@@ -753,10 +753,10 @@ if not factory then
 					if row > list_bottom then break end
 					local lab = ("#" .. cn):sub(1, w_ch - 1)
 					if st.sel_ch == j then
-						atlasgfx.fillRect(cx0 + w_srv, cy0 + row, w_ch, 1, win.client_fg)
-						atlasgfx.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)), win.client_bg, win.client_fg)
+						draw.fillRect(cx0 + w_srv, cy0 + row, w_ch, 1, win.client_fg)
+						draw.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)), win.client_bg, win.client_fg)
 					else
-						atlasgfx.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)), win.client_fg, win.client_bg)
+						draw.text(cx0 + w_srv, cy0 + row, lab .. string.rep(" ", math.max(0, w_ch - #lab)), win.client_fg, win.client_bg)
 					end
 					add_hit({
 						x0 = w_srv,
@@ -779,18 +779,18 @@ if not factory then
 				if line then
 					line = tostring(line)
 					if #line > msg_w then line = line:sub(1, msg_w) end
-					atlasgfx.text(cx0 + msg_x, cy0 + row, line, win.client_fg, win.client_bg)
+					draw.text(cx0 + msg_x, cy0 + row, line, win.client_fg, win.client_bg)
 				end
 			end
 
 			local hint = st.status
 			if #hint > cw - 2 then hint = hint:sub(1, cw - 5) .. "…" end
-			atlasgfx.text(cx0, cy0 + status_row, hint .. string.rep(" ", math.max(0, cw - #hint)), "bright_black", win.client_bg)
+			draw.text(cx0, cy0 + status_row, hint .. string.rep(" ", math.max(0, cw - #hint)), "bright_black", win.client_bg)
 
 			local prompt = st.prompt and ("?" .. (st.prompt.step or "") .. ") ") or ""
 			local buf = prompt .. st.compose
 			if #buf > cw - 3 then buf = "…" .. buf:sub(-(cw - 4)) end
-			atlasgfx.text(cx0, cy0 + input_row, "> " .. buf .. string.rep(" ", math.max(0, cw - #buf - 2)), "bright_white", win.client_bg)
+			draw.text(cx0, cy0 + input_row, "> " .. buf .. string.rep(" ", math.max(0, cw - #buf - 2)), "bright_white", win.client_bg)
 
 			shell:paint_dropdown(win)
 		end
@@ -906,7 +906,7 @@ if not factory then
   })
 
   return function(win)
-    local atlasgfx = dofile("/home/lib/atlasgfx.lua")
+    local draw = dofile("/home/lib/atlas_draw.lua")
     UI.editor_ensure()
     local st = UI._editor
     local cw, ch = win:client_w(), win:client_h()
@@ -953,7 +953,7 @@ if not factory then
       end
       if #disp > budget then disp = disp:sub(1, budget) end
       local line = prefix .. disp
-      atlasgfx.text(win:client_x(), win:client_y() + body_start + r, line .. string.rep(" ", cw - #line), win.client_fg, win.client_bg)
+      draw.text(win:client_x(), win:client_y() + body_start + r, line .. string.rep(" ", cw - #line), win.client_fg, win.client_bg)
     end
 
     shell:paint_dropdown(win)
@@ -1323,7 +1323,7 @@ if not factory then
   })
 
   return function(win)
-    local atlasgfx = dofile("/home/lib/atlasgfx.lua")
+    local draw = dofile("/home/lib/atlas_draw.lua")
     if not UI._settings_cat then UI._settings_cat = "system" end
     UI._settings_zones = {}
 
@@ -1358,7 +1358,7 @@ if not factory then
     local cx0, cy0 = win:client_x(), win:client_y()
 
     for r = yB, ch - 1 do
-      atlasgfx.text(cx0 + DIV, cy0 + r, "│", win.client_fg, win.client_bg)
+      draw.text(cx0 + DIV, cy0 + r, "│", win.client_fg, win.client_bg)
     end
 
     window.draw_text_line(win, 1, yB, "Settings", "bright_white")
@@ -1369,11 +1369,11 @@ if not factory then
       local sel = (UI._settings_cat == c.id)
       local lfg = sel and "black" or win.client_fg
       local lbg = sel and "bright_white" or win.client_bg
-      if sel then atlasgfx.fillRect(cx0, cy0 + row, LW, 1, "bright_white") end
+      if sel then draw.fillRect(cx0, cy0 + row, LW, 1, "bright_white") end
       local line = (sel and "│ " or "  ") .. c.label
       line = line .. string.rep(" ", math.max(0, LW - #line))
       if #line > LW then line = line:sub(1, LW) end
-      atlasgfx.text(cx0, cy0 + row, line, lfg, lbg)
+      draw.text(cx0, cy0 + row, line, lfg, lbg)
       add_zone(0, row, LW - 1, row, "cat:" .. c.id)
       row = row + 1
     end
@@ -1579,7 +1579,7 @@ if not factory then
 		local UI = ctx.UI
 		local window = ctx.window
 		local widgets = ctx.widgets
-		local atlasgfx = ctx.atlasgfx
+		local draw = ctx.draw
 		local atlastheme = ctx.atlastheme
 		local VERSION = ctx.VERSION
 		local deskutil = ctx.deskutil
@@ -1619,9 +1619,9 @@ if not factory then
 				.. "x"
 				.. tostring(UI.H)
 				.. "  cell px "
-				.. tostring(atlasgfx.cell_w)
+				.. tostring(draw.cell_w)
 				.. "x"
-				.. tostring(atlasgfx.cell_h)
+				.. tostring(draw.cell_h)
 			local lines = {
 				"--- System ---",
 				"AtlasOS " .. VERSION .. " (Custom OS for LuaMade Computers)",
@@ -1742,7 +1742,8 @@ local function check_paths()
 		"/home/AtlasOS/shell.lua",
 		"/home/AtlasOS/ui.lua",
 		"/home/lib/startmenu.lua",
-		"/home/lib/atlasgfx.lua",
+		"/home/lib/atlas_color.lua",
+		"/home/lib/atlas_draw.lua",
 		"/home/lib/atlasinstall.lua",
 		"/home/lib/atlasprofile.lua",
 		"/home/lib/atlastheme.lua",
@@ -1902,29 +1903,11 @@ end
   Writes /etc/AtlasOS/setup_complete then chains to boot_desktop.lua.
 ]]
 
-local atlasgfx = dofile("/home/lib/atlasgfx.lua")
+local draw = dofile("/home/lib/atlas_draw.lua")
 local input = dofile("/home/lib/input.lua")
 local atlastheme = dofile("/home/lib/atlastheme.lua")
 local atlasprofile = dofile("/home/lib/atlasprofile.lua")
 local atlasinstall = dofile("/home/lib/atlasinstall.lua")
-
-local GFX_CONF_PATH = "/etc/AtlasOS/gfx.conf"
-
-local function read_gfx_conf()
-	local conf = { cell_scale = 1.5 }
-	if not fs or not fs.read then return conf end
-	local ok, raw = pcall(fs.read, GFX_CONF_PATH)
-	if not ok or not raw or tostring(raw):gsub("%s", "") == "" then return conf end
-	for line in tostring(raw):gmatch("[^\r\n]+") do
-		local n = line:match("^%s*cell_scale%s*=%s*([0-9.]+)%s*$")
-			or line:match("^%s*scale%s*=%s*([0-9.]+)%s*$")
-		if n then
-			n = tonumber(n)
-			if n then conf.cell_scale = math.max(0.5, math.min(4, n)) end
-		end
-	end
-	return conf
-end
 
 local TARGET_W, TARGET_H = 120, 72
 
@@ -1955,57 +1938,56 @@ local state = {
 local W, H = TARGET_W, TARGET_H
 
 local function sync_canvas()
-	atlasgfx.init(read_gfx_conf())
-	-- Hard cutover: set canvas via atlasgfx and update input pixel sizing.
-	atlasgfx.set_canvas_from_cells(TARGET_W, TARGET_H)
-	local cw, ch = atlasgfx.canvas_cells()
+	draw.init()
+	draw.set_canvas_from_cells(TARGET_W, TARGET_H)
+	local cw, ch = draw.canvas_cells()
 	if cw and ch then W, H = cw, ch end
-	local pw, ph = atlasgfx.canvas_pixels_for_input()
+	local pw, ph = draw.canvas_pixels_for_input()
 	if pw and ph then input.set_canvas_pixels(pw, ph) end
 end
 
 local function draw_center_text(row, msg, fg, bg)
 	msg = tostring(msg or "")
 	local pad = math.max(1, math.floor((W - #msg) / 2))
-	atlasgfx.text(pad, row, msg, fg, bg)
+	draw.text(pad, row, msg, fg, bg)
 end
 
 local function draw_loading()
-	atlasgfx.begin_frame()
-	atlasgfx.fillRect(1, 1, W, H, "blue")
+	draw.begin_frame()
+	draw.fillRect(1, 1, W, H, "blue")
 	draw_center_text(3, "AtlasOS", "bright_yellow", "blue")
 	draw_center_text(5, state.load_title ~= "" and state.load_title or "Working…", "bright_white", "blue")
 	local det = state.load_detail or ""
 	if #det > W - 4 then
 		det = det:sub(1, math.max(1, W - 7)) .. "…"
 	end
-	atlasgfx.text(2, 6, det, "bright_cyan", "blue")
+	draw.text(2, 6, det, "bright_cyan", "blue")
 	local hint = state.load_hint or ""
 	if hint ~= "" and H >= 10 then
 		if #hint > W - 4 then
 			hint = hint:sub(1, math.max(1, W - 7)) .. "…"
 		end
-		atlasgfx.text(2, 7, hint, "bright_black", "blue")
+		draw.text(2, 7, hint, "bright_black", "blue")
 	end
 	local bar_row = H >= 12 and 9 or 8
 	local bar_x, bar_y, bar_w = 8, bar_row, W - 16
-	atlasgfx.fillRect(bar_x, bar_y, bar_w, 1, "bright_white")
+	draw.fillRect(bar_x, bar_y, bar_w, 1, "bright_white")
 	local inner = math.max(0, math.floor(bar_w * state.progress))
 	if inner > 0 then
-		atlasgfx.fillRect(bar_x, bar_y, inner, 1, "bright_green")
+		draw.fillRect(bar_x, bar_y, inner, 1, "bright_green")
 	end
 	local pct = math.floor(state.progress * 100 + 0.5)
 	draw_center_text(bar_row + 3, tostring(pct) .. "%", "bright_cyan", "blue")
 end
 
 local function draw_error()
-	atlasgfx.begin_frame()
-	atlasgfx.fillRect(1, 1, W, H, "red")
+	draw.begin_frame()
+	draw.fillRect(1, 1, W, H, "red")
 	draw_center_text(3, "AtlasOS — installation failed", "bright_yellow", "red")
 	local row = 6
 	for _, p in ipairs(state.missing) do
 		if row < H - 4 then
-			atlasgfx.text(4, row, p:sub(1, math.max(1, W - 8)), "bright_white", "red")
+			draw.text(4, row, p:sub(1, math.max(1, W - 8)), "bright_white", "red")
 			row = row + 1
 		end
 	end
@@ -2014,14 +1996,14 @@ local function draw_error()
 end
 
 local function draw_setup()
-	atlasgfx.begin_frame()
+	draw.begin_frame()
 	local bg = state.theme == "dark" and "black" or "white"
 	local fg = state.theme == "dark" and "bright_white" or "black"
-	atlasgfx.fillRect(1, 1, W, H, bg)
+	draw.fillRect(1, 1, W, H, bg)
 	draw_center_text(2, "Welcome to AtlasOS", "bright_cyan", bg)
 	draw_center_text(4, "Choose your name and theme", fg, bg)
 
-	atlasgfx.text(4, 7, "Username" .. (state.focus == 1 and " ◄" or ""), fg, bg)
+	draw.text(4, 7, "Username" .. (state.focus == 1 and " ◄" or ""), fg, bg)
 	local show = state.username
 	if state.focus == 1 then
 		local blink = (math.floor(state.blink_t / 400) % 2) == 0
@@ -2029,9 +2011,9 @@ local function draw_setup()
 	else
 		show = show .. " "
 	end
-	atlasgfx.text(4, 8, show:sub(1, math.max(1, W - 10)), "black", "bright_white")
+	draw.text(4, 8, show:sub(1, math.max(1, W - 10)), "black", "bright_white")
 
-	atlasgfx.text(4, 11, "Theme" .. (state.focus == 2 and " ◄" or ""), fg, bg)
+	draw.text(4, 11, "Theme" .. (state.focus == 2 and " ◄" or ""), fg, bg)
 	local function paint_theme_chip(col, label, which)
 		local on = (state.theme == which)
 		local sel = (state.focus == 2)
@@ -2041,7 +2023,7 @@ local function draw_setup()
 		else
 			cfg, cbg = fg, sel and "bright_black" or bg
 		end
-		atlasgfx.text(col, 12, "[ " .. label .. " ]", cfg, cbg)
+		draw.text(col, 12, "[ " .. label .. " ]", cfg, cbg)
 	end
 	paint_theme_chip(6, "Light", "light")
 	paint_theme_chip(24, "Dark", "dark")
@@ -2051,7 +2033,7 @@ local function draw_setup()
 	draw_center_text(15, "[  Continue — Enter  ]", cont_fg, cont_bg)
 
 	local hint_fg = state.theme == "dark" and "bright_cyan" or "bright_black"
-	atlasgfx.text(3, H - 1, "Tab next field  Enter: save on Continue  Typing: name", hint_fg, bg)
+	draw.text(3, H - 1, "Tab next field  Enter: save on Continue  Typing: name", hint_fg, bg)
 end
 
 local function redraw()
@@ -2062,6 +2044,7 @@ local function redraw()
 	else
 		draw_setup()
 	end
+	draw.end_frame()
 end
 
 local function finish_setup()
@@ -2146,7 +2129,7 @@ local function handle_mouse(e)
 	end
 	local cx, cy
 	if e.insideCanvas and type(e.uiX) == "number" and type(e.uiY) == "number" then
-		cx, cy = atlasgfx.pixel_to_cell_rel(e.uiX, e.uiY)
+		cx, cy = draw.pixel_to_cell_rel(e.uiX, e.uiY)
 	else
 		cx, cy = input.pixel_to_cell(e.x, e.y, W, H)
 	end
@@ -2546,7 +2529,7 @@ local widgets = dofile("/home/lib/widgets.lua")
 local input = dofile("/home/lib/input.lua")
 local startmenu = _G.startmenu or dofile("/home/lib/startmenu.lua")
 _G.startmenu = startmenu
-local atlasgfx = dofile("/home/lib/atlasgfx.lua")
+local draw = dofile("/home/lib/atlas_draw.lua")
 local appkit = dofile("/home/lib/appkit.lua")
 local paths = dofile("/home/lib/desktop_paths.lua")
 local deskutil = dofile("/home/lib/desktop_util.lua")
@@ -2554,34 +2537,10 @@ local settings_actions = dofile("/home/lib/settings_dispatch.lua")
 local builtin_paint = dofile("/home/lib/builtin_window_paint.lua")
 
 local LAYOUT_PATH = "/etc/AtlasOS/layout.txt"
-local GFX_CONF_PATH = "/etc/AtlasOS/gfx.conf"
 local VERSION = "0.3.2"
 
--- Default canvas (cells) before first gfx.setCanvasSize; avoid trusting 64x24 default from mod.
+-- Default canvas (cells) before first gfx_2d.setCanvasSize; avoids trusting the mod default.
 local CANVAS_DEFAULT_W, CANVAS_DEFAULT_H = 150, 100
-
---- gfx.conf: cell_scale scales logical cell → pixel size for bitmap gfx (text rasterization).
-local function read_gfx_conf()
-	local conf = {
-		cell_scale = 1.5,
-	}
-	if not fs or not fs.read then return conf end
-	local ok, raw = pcall(fs.read, GFX_CONF_PATH)
-	if not ok or not raw or tostring(raw):gsub("%s", "") == "" then return conf end
-	for line in tostring(raw):gmatch("[^\r\n]+") do
-		local function num(pat)
-			local v = line:match(pat)
-			if v then
-				local n = tonumber(v)
-				if n then return math.max(0.5, math.min(4.0, n)) end
-			end
-			return nil
-		end
-		local 		n = num("^%s*cell_scale%s*=%s*([0-9.]+)%s*$") or num("^%s*scale%s*=%s*([0-9.]+)%s*$")
-		if n then conf.cell_scale = n end
-	end
-	return conf
-end
 
 --- Per-row / per-app icon colors (appinfo icon_fg, icon_bg, icon_row_fg, icon_taskbar_sel_fg).
 local function gfx_icon_row_style(meta, row_idx, default_fg, default_bg, taskbar_selected)
@@ -2609,29 +2568,22 @@ local function gfx_icon_row_style(meta, row_idx, default_fg, default_bg, taskbar
 	return fg, bg
 end
 
--- Logical grid in character cells; bitmap gfx maps cells → pixels via atlasgfx.
 local function size_get()
-	-- After hard cutover, rely on atlasgfx for canvas metrics once sized.
-	if UI._gfx_sized then
-		local cw, ch = atlasgfx.canvas_cells()
-		if cw and ch and cw >= 8 and ch >= 8 then return cw, ch end
-	end
+	local cw, ch = draw.canvas_cells()
+	if cw and ch and cw >= 8 and ch >= 8 then return cw, ch end
 	return CANVAS_DEFAULT_W, CANVAS_DEFAULT_H
 end
 
 local function size_set(w, h)
 	w = math.max(1, math.min(240, math.floor(w or CANVAS_DEFAULT_W)))
 	h = math.max(1, math.min(120, math.floor(h or CANVAS_DEFAULT_H)))
-	atlasgfx.init(UI._gfx_conf or read_gfx_conf())
-	-- Hard cutover: set canvas via atlasgfx (will assert if host gfx lacks capability).
-	atlasgfx.set_canvas_from_cells(w, h)
-	UI._gfx_sized = true
+	draw.init()
+	draw.set_canvas_from_cells(w, h)
 end
 
 local UI = {
 	_size_get = size_get,
 	_size_set = size_set,
-	_gfx_sized = false,
 	W = CANVAS_DEFAULT_W,
 	H = CANVAS_DEFAULT_H,
 	TASKBAR_H = math.max(1, math.min(10, math.floor(CANVAS_DEFAULT_H * 0.15 + 0.5))),
@@ -3153,7 +3105,7 @@ do
 		UI = UI,
 		window = window,
 		widgets = widgets,
-		atlasgfx = atlasgfx,
+		draw = draw,
 		appkit = appkit,
 		atlastheme = atlastheme,
 		VERSION = VERSION,
@@ -3297,7 +3249,7 @@ function UI.handle_event(e)
 		-- input.pixel_to_cell otherwise. Under hard cutover, atlasgfx provides
 		-- consistent pixel-to-cell mapping.
 		if e.insideCanvas and type(e.uiX) == "number" and type(e.uiY) == "number" then
-			cx, cy = atlasgfx.pixel_to_cell_rel(e.uiX, e.uiY)
+			cx, cy = draw.pixel_to_cell_rel(e.uiX, e.uiY)
 			cx = math.max(1, math.min(UI.W, cx))
 			cy = math.max(1, math.min(UI.H, cy))
 		else
@@ -3445,9 +3397,7 @@ function UI.draw_taskbar()
 	local th = UI.TASKBAR_H
 	local y_icon = y0
 	local y_dock = y0 + th - 1
-	atlasgfx.fillRect(1, y0, UI.W, th, tb)
-
-	local gconf = UI._gfx_conf or read_gfx_conf()
+	draw.fillRect(1, y0, UI.W, th, tb)
 
 	local slots, search_w, settings_x = UI.taskbar_slots_visible()
 	local trash_x = UI.W - 19
@@ -3456,15 +3406,15 @@ function UI.draw_taskbar()
 	local x = 2
 	local start_h = (th >= 3) and 2 or th
 	if UI.start_open then
-		atlasgfx.fillRect(x, y0, 4, start_h, 28)
+		draw.fillRect(x, y0, 4, start_h, 28)
 	end
-	atlasgfx.text(x + 1, y_icon, "[", fg, tb)
-	atlasgfx.text(x + 2, y_icon, "S", fg, tb)
-	atlasgfx.text(x + 3, y_icon, "]", fg, tb)
+	draw.text(x + 1, y_icon, "[", fg, tb)
+	draw.text(x + 2, y_icon, "S", fg, tb)
+	draw.text(x + 3, y_icon, "]", fg, tb)
 	x = 7
 
 	local sw = search_w
-	UI.search_api().draw_taskbar(atlasgfx, {
+	UI.search_api().draw_taskbar(draw, {
 		x = x,
 		y0 = y0,
 		sw = sw,
@@ -3485,13 +3435,13 @@ function UI.draw_taskbar()
 		local lines, nrows = startmenu.icon_taskbar_lines(m, th)
 		local sel = (si == UI.taskbar_sel)
 		if sel then
-			atlasgfx.fillRect(sx, y_icon, slot_w, nrows, 28)
+			draw.fillRect(sx, y_icon, slot_w, nrows, 28)
 		end
 		for i = 1, nrows do
 			local L = lines[i] or ""
 			local pad = math.max(0, math.floor((slot_w - #L) / 2))
 			local ifg, ibg = gfx_icon_row_style(m, i, fg, tb, sel)
-			atlasgfx.text(sx + pad, y_icon + i - 1, L, ifg, ibg)
+			draw.text(sx + pad, y_icon + i - 1, L, ifg, ibg)
 		end
 	end
 
@@ -3514,21 +3464,21 @@ function UI.draw_taskbar()
 		local gap_w = settings_x - gap_x - 1
 		if gap_w >= 12 then
 			local status_txt = deskutil.taskbar_status_line(gap_w)
-			atlasgfx.text(gap_x + math.max(0, math.floor((gap_w - #status_txt) / 2)), y0 + 1, status_txt, 28, tb)
+			draw.text(gap_x + math.max(0, math.floor((gap_w - #status_txt) / 2)), y0 + 1, status_txt, 28, tb)
 		elseif gap_w >= 7 then
 			local lab = "AtlasOS"
-			atlasgfx.text(gap_x + math.max(0, math.floor((gap_w - #lab) / 2)), y0 + 1, lab, 28, tb)
+			draw.text(gap_x + math.max(0, math.floor((gap_w - #lab) / 2)), y0 + 1, lab, 28, tb)
 		end
 	end
 
 	local dt = deskutil.dock_datetime_str()
 	local world = deskutil.dock_world_line()
-	atlasgfx.text(UI.W - #dt, y_dock, dt, 28, tb)
+	draw.text(UI.W - #dt, y_dock, dt, 28, tb)
 	local room = UI.W - #dt - 4
 	if room >= 8 then
 		local wline = world
 		if #wline > room then wline = wline:sub(1, room - 1) .. "…" end
-		atlasgfx.text(2, y_dock, wline, 28, tb)
+		draw.text(2, y_dock, wline, 28, tb)
 	end
 end
 
@@ -3541,12 +3491,12 @@ function UI.draw_start_menu()
 	local px = 2
 	local panel_bg = atlastheme.load().mode == "dark" and "black" or "white"
 	local panel_fg = atlastheme.load().mode == "dark" and "white" or "black"
-	atlasgfx.fillRect(px, py, pw, ph, panel_bg)
-	atlasgfx.rect(px, py, pw, ph, 22)
+	draw.fillRect(px, py, pw, ph, panel_bg)
+	draw.rect(px, py, pw, ph, 22)
 	local row = py + 1
-	atlasgfx.text(px + 1, row, " Search apps and files...", panel_fg, panel_bg)
+	draw.text(px + 1, row, " Search apps and files...", panel_fg, panel_bg)
 	row = row + 2
-	atlasgfx.text(px + 1, row, "── Pinned (groups) ──", 22, panel_bg)
+	draw.text(px + 1, row, "── Pinned (groups) ──", 22, panel_bg)
 	row = row + 1
 	local groups = startmenu.load()
 	local tile_w, gap = 14, 1
@@ -3569,7 +3519,7 @@ function UI.draw_start_menu()
 	end
 	for _, g in ipairs(groups) do
 		if row >= py + ph - 8 then break end
-		atlasgfx.text(px + 1, row, g.name, 28, panel_bg)
+		draw.text(px + 1, row, g.name, 28, panel_bg)
 		row = row + 1
 		local col = 0
 		for _, id in ipairs(g.ids) do
@@ -3577,14 +3527,14 @@ function UI.draw_start_menu()
 			if m and row + tile_h <= py + ph - 6 then
 				local tx = px + 2 + col * (tile_w + gap)
 				local iw = tile_w - 2
-				atlasgfx.fillRect(tx, row, tile_w, tile_h, 22)
+				draw.fillRect(tx, row, tile_w, tile_h, 22)
 				local block = tile_icon_block(m, iw, icon_rows)
 				for r = 1, icon_rows do
 					local ifg, ibg = gfx_icon_row_style(m, r, "bright_white", 22, false)
-					atlasgfx.text(tx + 1, row + r - 1, block[r], ifg, ibg)
+					draw.text(tx + 1, row + r - 1, block[r], ifg, ibg)
 				end
 				local lab = m.label:sub(1, iw)
-				atlasgfx.text(tx + 1, row + icon_rows, lab .. string.rep(" ", iw - #lab), panel_fg, panel_bg)
+				draw.text(tx + 1, row + icon_rows, lab .. string.rep(" ", iw - #lab), panel_fg, panel_bg)
 				col = col + 1
 				if col >= cols then
 					col = 0
@@ -3595,7 +3545,7 @@ function UI.draw_start_menu()
 		if col > 0 then row = row + tile_h + 1 end
 		row = row + 1
 	end
-	atlasgfx.text(px + 1, row, "── All apps ──", 22, panel_bg)
+	draw.text(px + 1, row, "── All apps ──", 22, panel_bg)
 	row = row + 1
 	for _, id in ipairs(startmenu.all_app_ids()) do
 		if row >= py + ph - 3 then break end
@@ -3603,11 +3553,11 @@ function UI.draw_start_menu()
 		local mark = (startmenu.icon_lines(m)[1] or "?"):sub(1, 8)
 		local mx = px + 2
 		local ifg, ibg = gfx_icon_row_style(m, 1, panel_fg, panel_bg, false)
-		atlasgfx.text(mx, row, mark, ifg, ibg)
-		atlasgfx.text(mx + #mark, row, "  " .. m.label .. "  (" .. id .. ")", panel_fg, panel_bg)
+		draw.text(mx, row, mark, ifg, ibg)
+		draw.text(mx + #mark, row, "  " .. m.label .. "  (" .. id .. ")", panel_fg, panel_bg)
 		row = row + 1
 	end
-	atlasgfx.text(px + 1, py + ph - 2, "pin user apps only  find|search <text>", 28, panel_bg)
+	draw.text(px + 1, py + ph - 2, "pin user apps only  find|search <text>", 28, panel_bg)
 end
 
 function UI.draw_activities_overlay()
@@ -3615,35 +3565,34 @@ function UI.draw_activities_overlay()
 	local mx = math.max(3, math.floor(UI.W * 0.04))
 	local my = math.max(2, math.floor(UI.H * 0.06))
 	local ow, oh = UI.W - 2 * mx, UI.H - 2 * my
-	atlasgfx.fillRect(mx, my, ow, oh, "black")
-	atlasgfx.rect(mx, my, ow, oh, 22)
+	draw.fillRect(mx, my, ow, oh, "black")
+	draw.rect(mx, my, ow, oh, 22)
 	local ix = mx + 2
 	local iy = my + 1
-	atlasgfx.text(ix, iy, " Activities", "black", "white")
-	atlasgfx.text(ix, iy + 2, "Search: ______", "black", "white")
-	atlasgfx.text(ix, iy + 4, "Windows:", "black", "white")
+	draw.text(ix, iy, " Activities", "black", "white")
+	draw.text(ix, iy + 2, "Search: ______", "black", "white")
+	draw.text(ix, iy + 4, "Windows:", "black", "white")
 	local row = iy + 6
 	if UI.desk and UI.desk._windows then
 		for _, w in ipairs(UI.desk._windows) do
 			if row >= my + oh - 3 then break end
 			local tag = w.minimized and " (min)" or ""
-			atlasgfx.text(ix + 2, row, "- " .. (w.title or "Window") .. tag, "black", "white")
+			draw.text(ix + 2, row, "- " .. (w.title or "Window") .. tag, "black", "white")
 			row = row + 1
 		end
 	end
-	atlasgfx.text(ix, my + oh - 2, "Esc when keys work", "black", "white")
+	draw.text(ix, my + oh - 2, "Esc when keys work", "black", "white")
 end
 
 function UI.redraw()
-	UI._gfx_conf = read_gfx_conf()
-	atlasgfx.init(UI._gfx_conf)
+	draw.init()
 	UI.update_size()
 	UI._size_set(UI.W, UI.H)
-	local pw, ph = atlasgfx.canvas_pixels_for_input()
+	local pw, ph = draw.canvas_pixels_for_input()
 	if pw and ph then
 		input.set_canvas_pixels(pw, ph)
 	end
-	atlasgfx.begin_frame()
+	draw.begin_frame()
 	local key = UI.W .. "x" .. UI.H
 	if UI.desk and UI._canvas_key ~= key then
 		UI.desk = nil
@@ -3665,6 +3614,7 @@ function UI.redraw()
 	UI.draw_taskbar()
 	UI.draw_start_menu()
 	UI.draw_activities_overlay()
+	draw.end_frame()
 end
 
 function UI.toggle_activities()
@@ -3754,14 +3704,14 @@ function UI.draw_minimized_strip()
 	if not has then return end
 	local t = atlastheme.load()
 	local bg = t.mode == "dark" and 235 or 252
-	atlasgfx.fillRect(1, y0, UI.W, 1, bg)
+	draw.fillRect(1, y0, UI.W, 1, bg)
 	local x = 2
-	atlasgfx.text(1, y0, " ", 28, bg)
+	draw.text(1, y0, " ", 28, bg)
 	for _, w in ipairs(UI.desk._windows) do
 		if w.minimized then
 			local seg = "[" .. (w.title:sub(1, 12)) .. "]"
 			if x + #seg > UI.W then break end
-			atlasgfx.text(x, y0, seg, "bright_white", 22)
+			draw.text(x, y0, seg, "bright_white", 22)
 			UI._min_strip[#UI._min_strip + 1] = { w = w, x0 = x, x1 = x + #seg - 1 }
 			x = x + #seg + 2
 		end
@@ -4008,7 +3958,7 @@ return appinfo
   ctx in on_command: { source = "menubar" | "toolbar", menu_index?, item_label? }
 ]]
 
-local atlasgfx = dofile("/home/lib/atlasgfx.lua")
+local draw = dofile("/home/lib/atlas_draw.lua")
 local widgets = dofile("/home/lib/widgets.lua")
 
 local appkit = {}
@@ -4086,11 +4036,11 @@ function appkit.shell(opts)
     local row = 0
     local cy0 = win:client_y()
     local cx0 = win:client_x()
-    atlasgfx.fillRect(cx0, cy0 + row, cw, 1, self.menubar_bg)
+    draw.fillRect(cx0, cy0 + row, cw, 1, self.menubar_bg)
     for i, m in ipairs(self.menubar) do
       local lab = " " .. clamp(m.label, 20) .. " "
       if x + #lab > cw then break end
-      atlasgfx.text(cx0 + x, cy0 + row, lab, self.menubar_fg, self.menubar_bg)
+      draw.text(cx0 + x, cy0 + row, lab, self.menubar_fg, self.menubar_bg)
       self._menu_layout[i] = { x0 = x, x1 = x + #lab - 1, label = m.label }
       self._bar_zones[#self._bar_zones + 1] = {
         x0 = x,
@@ -4112,7 +4062,7 @@ function appkit.shell(opts)
     local cw, ch = win:client_w(), win:client_h()
     if row >= ch then return start_row end
     local cx0, cy0 = win:client_x(), win:client_y()
-    atlasgfx.fillRect(cx0, cy0 + row, cw, 1, self.toolbar_bg)
+    draw.fillRect(cx0, cy0 + row, cw, 1, self.toolbar_bg)
     local x = 0
     for _, b in ipairs(self.toolbar) do
       local w = math.max(3, math.floor(b.w or (#tostring(b.label or "") + 4)))
@@ -4172,12 +4122,12 @@ function appkit.shell(opts)
     end
 
     local cx0, cy0 = win:client_x(), win:client_y()
-    atlasgfx.rect(cx0 + x0, cy0 + y0, box_w, box_h, self.dd_border)
+    draw.rect(cx0 + x0, cy0 + y0, box_w, box_h, self.dd_border)
     for i, it in ipairs(items) do
       if i + 1 >= box_h then break end
       local line = " " .. clamp(it.label, box_w - 2)
       line = line .. string.rep(" ", math.max(0, box_w - #line))
-      atlasgfx.text(cx0 + x0, cy0 + y0 + i, line:sub(1, box_w), self.dd_fg, self.dd_bg)
+      draw.text(cx0 + x0, cy0 + y0 + i, line:sub(1, box_w), self.dd_fg, self.dd_bg)
       self._dd_zones[#self._dd_zones + 1] = {
         x0 = x0,
         y0 = y0 + i,
@@ -4329,188 +4279,220 @@ return M
 ]=],
 	},
 	{
-		path = [[/home/lib/atlasgfx.lua]],
+		path = [[/home/lib/atlas_color.lua]],
 		body = [=[--[[
-  Cell-grid UI drawing for LuaMade bitmap gfx (pixel coords + rgba rects).
-  https://garretreichenbach.github.io/Logiscript/markdown/graphics/gfx.html
+  atlas_color.lua — AtlasOS color token → normalized RGBA float resolution.
+  Extracted from atlasgfx so any module can resolve colors without pulling in drawing state.
 ]]
 
-if _G.__AtlasGFX then
-  return _G.__AtlasGFX
-end
-
-local FONT = dofile("/home/lib/font8x8_basic.lua")
-
-local atlasgfx = {
-  cell_w = 8,
-  cell_h = 14,
-  layer = "atlas",
-}
-
--- Phase 1 hard cutover: require the new luamade-compatible `gfx` drawing API.
--- This adapter is strict: if the expected drawing primitives are not present
--- atlasgfx.init will raise an error so the migration is obvious and fails fast.
+if _G.__AtlasColor then return _G.__AtlasColor end
 
 local NAMED = {
-  black = { 0.02, 0.02, 0.02, 1 },
-  red = { 0.75, 0.12, 0.12, 1 },
-  green = { 0.15, 0.72, 0.2, 1 },
-  yellow = { 0.92, 0.86, 0.2, 1 },
-  blue = { 0.22, 0.4, 0.88, 1 },
-  magenta = { 0.82, 0.22, 0.75, 1 },
-  cyan = { 0.15, 0.82, 0.88, 1 },
-  white = { 0.88, 0.88, 0.88, 1 },
-  bright_black = { 0.35, 0.35, 0.38, 1 },
-  bright_red = { 1, 0.35, 0.35, 1 },
-  bright_green = { 0.35, 1, 0.45, 1 },
-  bright_yellow = { 1, 1, 0.45, 1 },
-  bright_blue = { 0.45, 0.55, 1, 1 },
-  bright_magenta = { 1, 0.45, 1, 1 },
-  bright_cyan = { 0.45, 1, 1, 1 },
-  bright_white = { 1, 1, 1, 1 },
+  black          = { 0.02, 0.02, 0.02, 1 },
+  red            = { 0.75, 0.12, 0.12, 1 },
+  green          = { 0.15, 0.72, 0.2,  1 },
+  yellow         = { 0.92, 0.86, 0.2,  1 },
+  blue           = { 0.22, 0.4,  0.88, 1 },
+  magenta        = { 0.82, 0.22, 0.75, 1 },
+  cyan           = { 0.15, 0.82, 0.88, 1 },
+  white          = { 0.88, 0.88, 0.88, 1 },
+  bright_black   = { 0.35, 0.35, 0.38, 1 },
+  bright_red     = { 1,    0.35, 0.35, 1 },
+  bright_green   = { 0.35, 1,    0.45, 1 },
+  bright_yellow  = { 1,    1,    0.45, 1 },
+  bright_blue    = { 0.45, 0.55, 1,    1 },
+  bright_magenta = { 1,    0.45, 1,    1 },
+  bright_cyan    = { 0.45, 1,    1,    1 },
+  bright_white   = { 1,    1,    1,    1 },
 }
 
 local NUM = {
-  [22] = { 0.35, 0.38, 0.95, 1 },
-  [28] = { 0.22, 0.88, 0.28, 1 },
+  [22]  = { 0.35, 0.38, 0.95, 1 },
+  [28]  = { 0.22, 0.88, 0.28, 1 },
   [235] = { 0.12, 0.12, 0.14, 1 },
   [252] = { 0.93, 0.93, 0.94, 1 },
 }
 
-local function color_to_rgba(c, fallback)
+local M = {}
+
+--- Returns r, g, b, a as normalized floats [0, 1].
+--- c may be a named string, a 256-colour integer, an {r,g,b,a} table, or nil.
+--- Falls back to opaque white when unresolved.
+function M.resolve(c)
+  if type(c) == "table" then
+    return c[1] or 1, c[2] or 1, c[3] or 1, c[4] or 1
+  end
   if type(c) == "string" then
-    return NAMED[c] or fallback
+    local t = NAMED[c]
+    if t then return t[1], t[2], t[3], t[4] end
   end
   if type(c) == "number" then
     local n = math.floor(c)
-    if NUM[n] then return NUM[n] end
+    local t = NUM[n]
+    if t then return t[1], t[2], t[3], t[4] end
     if n >= 232 and n <= 255 then
-      local gmi = (n - 232) / 23
-      return { gmi, gmi, gmi, 1 }
+      local v = (n - 232) / 23
+      return v, v, v, 1
     end
   end
-  return fallback
+  return 1, 1, 1, 1
 end
 
-local function bit_pixel(byte, col)
-  return math.floor(byte / 2 ^ (7 - col)) % 2
+_G.__AtlasColor = M
+return M
+]=],
+	},
+	{
+		path = [[/home/lib/atlas_draw.lua]],
+		body = [=[--[[
+  atlas_draw.lua — Cell-grid drawing adapter backed by gfx_2d.
+  Drop-in replacement for atlasgfx.lua (Phase 1 migration).
+
+  All public coordinates are in character cells (1-based x/y, width/height in cells).
+  Pixel conversion is handled internally. Phase 2 will move callers to pixel coords
+  and gui_lib components, at which point this module can be removed.
+
+  Canvas sizing: gfx_2d.setAutoScale(true) is enabled so the host viewport scales
+  the logical canvas automatically — no manual cell_scale / gfx.conf needed.
+
+  Text rendering uses gfx_2d.text() (built-in pixel font, scale 1) instead of the
+  manual 8×8 bitmap font loop from the old atlasgfx.
+]]
+
+if _G.__AtlasDraw then return _G.__AtlasDraw end
+
+local color = dofile("/home/lib/atlas_color.lua")
+
+-- Logical pixel dimensions of one cell (at gfx_2d text scale 1).
+-- cell_w matches the 8-pixel-wide built-in font; cell_h adds 2px leading.
+local CELL_W = 8
+local CELL_H = 10
+
+local D = {
+  cell_w     = CELL_W,
+  cell_h     = CELL_H,
+  text_scale = 1,
+  layer      = "default",
+}
+
+--- init([conf]) — validates gfx_2d is present. The conf table is accepted for
+--- backward compatibility with callers that still pass a gfx.conf result, but the
+--- cell_scale field is no longer used; scaling is handled by gfx_2d.setAutoScale.
+function D.init(_conf)
+  assert(type(gfx_2d) == "table", "atlas_draw.init: global 'gfx_2d' is missing")
+  D.cell_w     = CELL_W
+  D.cell_h     = CELL_H
+  D.text_scale = 1
 end
 
-function atlasgfx.init(conf)
-  conf = conf or {}
-  local sc = tonumber(conf.cell_scale) or 1
-  sc = math.max(0.5, math.min(4, sc))
-  atlasgfx.cell_w = math.max(4, math.floor(8 * sc + 0.5))
-  atlasgfx.cell_h = math.max(6, math.floor(14 * sc + 0.5))
-  -- Ensure the host provides the expected drawing primitives. This is a
-  -- strict, luamade-only contract for the hard cutover.
-  assert(type(gfx_2d) == "table", "atlasgfx.init: required global 'gfx' is missing - install the new luamade graphics library")
-  assert(type(gfx_2d.rect) == "function", "atlasgfx.init: gfx.rect missing")
-  assert(type(gfx_2d.getWidth) == "function" and type(gfx_2d.getHeight) == "function", "atlasgfx.init: gfx.getWidth/getHeight missing")
-  -- setCanvasSize and clear are optional but preferred; if missing, callers may fail later.
-end
-
--- atlasgfx.is_bitmap() removed: hard cutover enforces bitmap-style rendering
--- through the strict adapter. Callers should no longer branch on this.
-
-function atlasgfx.set_canvas_from_cells(cols, rows)
+--- Set the canvas to fit (cols × rows) cells and enable viewport auto-scale.
+--- Returns the canvas size in pixels.
+function D.set_canvas_from_cells(cols, rows)
   cols = math.max(1, math.floor(cols or 80))
   rows = math.max(1, math.floor(rows or 24))
-  local pw = cols * atlasgfx.cell_w
-  local ph = rows * atlasgfx.cell_h
-  -- Resize the underlying drawing canvas. Fail if host does not expose the API.
-  assert(type(gfx_2d.setCanvasSize) == "function", "atlasgfx.set_canvas_from_cells: gfx.setCanvasSize missing")
+  assert(type(gfx_2d.setCanvasSize) == "function",
+    "atlas_draw.set_canvas_from_cells: gfx_2d.setCanvasSize missing")
+  if type(gfx_2d.setAutoScale) == "function" then
+    gfx_2d.setAutoScale(true)
+  end
+  local pw = cols * D.cell_w
+  local ph = rows * D.cell_h
   gfx_2d.setCanvasSize(pw, ph)
   return pw, ph
 end
 
-function atlasgfx.canvas_cells()
-  assert(type(gfx_2d.getWidth) == "function" and type(gfx_2d.getHeight) == "function", "atlasgfx.canvas_cells: gfx.getWidth/getHeight missing")
-  local gw, gh = gfx_2d.getWidth(), gfx_2d.getHeight()
-  assert(type(gw) == "number" and type(gh) == "number", "atlasgfx.canvas_cells: invalid canvas dimensions")
-  local cw = atlasgfx.cell_w > 0 and gw / atlasgfx.cell_w or gw
-  local ch = atlasgfx.cell_h > 0 and gh / atlasgfx.cell_h or gh
-  return math.max(8, math.floor(cw)), math.max(8, math.floor(ch))
+--- Returns current canvas size in cells (derived from gfx_2d canvas dimensions).
+function D.canvas_cells()
+  assert(
+    type(gfx_2d.getWidth) == "function" and type(gfx_2d.getHeight) == "function",
+    "atlas_draw.canvas_cells: gfx_2d.getWidth/getHeight missing"
+  )
+  local gw = gfx_2d.getWidth()
+  local gh = gfx_2d.getHeight()
+  if type(gw) ~= "number" or type(gh) ~= "number" then return 80, 24 end
+  return math.max(8, math.floor(gw / D.cell_w)),
+         math.max(8, math.floor(gh / D.cell_h))
 end
 
-function atlasgfx.canvas_pixels_for_input()
-  assert(type(gfx_2d.getWidth) == "function" and type(gfx_2d.getHeight) == "function", "atlasgfx.canvas_pixels_for_input: gfx.getWidth/getHeight missing")
-  local gw, gh = gfx.getWidth(), gfx.getHeight()
+--- Returns the canvas pixel dimensions used for input hit-testing.
+function D.canvas_pixels_for_input()
+  if type(gfx_2d.getWidth) ~= "function" then return nil, nil end
+  local gw, gh = gfx_2d.getWidth(), gfx_2d.getHeight()
   if gw and gh and gw > 0 and gh > 0 then return gw, gh end
   return nil, nil
 end
 
-function atlasgfx.begin_frame()
-  assert(type(gfx_2d.clear) == "function", "atlasgfx.begin_frame: gfx.clear missing")
+--- Convert 1-based cell (cx, cy) to top-left pixel coordinates.
+function D.cell_to_pixel(cx, cy)
+  return (math.floor(cx or 1) - 1) * D.cell_w,
+         (math.floor(cy or 1) - 1) * D.cell_h
+end
+
+--- Convert canvas pixel (px, py) to 1-based cell coordinates.
+function D.pixel_to_cell_rel(px, py)
+  return math.floor((tonumber(px) or 0) / D.cell_w) + 1,
+         math.floor((tonumber(py) or 0) / D.cell_h) + 1
+end
+
+--- Clear the canvas and open a new draw batch (anti-flicker).
+function D.begin_frame()
+  assert(type(gfx_2d.clear) == "function", "atlas_draw.begin_frame: gfx_2d.clear missing")
   gfx_2d.clear()
-  -- If host provides layers, attempt to set a default layer (non-fatal).
-  if type(gfx_2d.setLayer) == "function" then gfx_2d.setLayer(atlasgfx.layer) end
+  if type(gfx_2d.beginBatch) == "function" then gfx_2d.beginBatch() end
+  if type(gfx_2d.setLayer) == "function" then gfx_2d.setLayer(D.layer) end
 end
 
-function atlasgfx.fillRect(x, y, w, h, bg_color)
-  x, y, w, h = math.floor(x or 1), math.floor(y or 1), math.floor(w or 1), math.floor(h or 1)
-  if w < 1 or h < 1 then return end
-  local px, py = atlasgfx.cell_to_pixel(x, y)
-  local pw, ph = w * atlasgfx.cell_w, h * atlasgfx.cell_h
-  local c = color_to_rgba(bg_color, { 0, 0, 0, 1 })
-  gfx_2d.rect(px, py, pw, ph, c[1], c[2], c[3], c[4], true)
+--- Commit the draw batch started by begin_frame.
+function D.end_frame()
+  if type(gfx_2d.commitBatch) == "function" then gfx_2d.commitBatch() end
 end
 
-function atlasgfx.rect(x, y, w, h, fg_color)
-  x, y, w, h = math.floor(x or 1), math.floor(y or 1), math.floor(w or 1), math.floor(h or 1)
-  if w < 2 or h < 2 then return end
-  local px, py = atlasgfx.cell_to_pixel(x, y)
-  local pw, ph = w * atlasgfx.cell_w, h * atlasgfx.cell_h
-  local c = color_to_rgba(fg_color, { 1, 1, 1, 1 })
-  gfx_2d.rect(px, py, pw, ph, c[1], c[2], c[3], c[4], false)
+--- Filled rectangle in cell coordinates.
+--- bg_color: AtlasOS color token (named string, 256-colour int, or {r,g,b,a} table).
+function D.fillRect(cx, cy, cw, ch, bg_color)
+  cx = math.floor(cx or 1)
+  cy = math.floor(cy or 1)
+  cw = math.floor(cw or 1)
+  ch = math.floor(ch or 1)
+  if cw < 1 or ch < 1 then return end
+  local px, py = D.cell_to_pixel(cx, cy)
+  local pw, ph = cw * D.cell_w, ch * D.cell_h
+  local r, g, b, a = color.resolve(bg_color)
+  gfx_2d.rect(px, py, pw, ph, r, g, b, a, true)
 end
 
-function atlasgfx.text(x, y, str, fg_color, bg_color)
-  -- Render a string into cell grid using the 8x8 pixel font.
+--- Outline rectangle in cell coordinates.
+function D.rect(cx, cy, cw, ch, fg_color)
+  cx = math.floor(cx or 1)
+  cy = math.floor(cy or 1)
+  cw = math.floor(cw or 1)
+  ch = math.floor(ch or 1)
+  if cw < 2 or ch < 2 then return end
+  local px, py = D.cell_to_pixel(cx, cy)
+  local pw, ph = cw * D.cell_w, ch * D.cell_h
+  local r, g, b, a = color.resolve(fg_color)
+  gfx_2d.rect(px, py, pw, ph, r, g, b, a, false)
+end
+
+--- Text with background fill in cell coordinates.
+--- Renders str at cell (cx, cy) with fg_color foreground and optional bg_color background.
+function D.text(cx, cy, str, fg_color, bg_color)
   str = tostring(str or "")
-  x, y = math.floor(x or 1), math.floor(y or 1)
-  local cf = color_to_rgba(fg_color, { 1, 1, 1, 1 })
-  local cb = color_to_rgba(bg_color, { 0, 0, 0, 1 })
-  local rf, gf, bf, af = cf[1], cf[2], cf[3], cf[4]
-  local br, bgc, bb, ba = cb[1], cb[2], cb[3], cb[4]
-  local scale = math.min(atlasgfx.cell_w / 8, atlasgfx.cell_h / 8)
-  scale = math.max(1, math.floor(scale))
-  for i = 1, #str do
-    local col = x + i - 1
-    local px, py = atlasgfx.cell_to_pixel(col, y)
-    gfx_2d.rect(px, py, atlasgfx.cell_w, atlasgfx.cell_h, br, bgc, bb, ba, true)
-    local byte = str:byte(i) or 32
-    if byte < 0 or byte > 127 then byte = 63 end
-    local g = FONT[byte + 1]
-    if g then
-      local ox = px + math.floor((atlasgfx.cell_w - 8 * scale) / 2)
-      local oy = py + math.floor((atlasgfx.cell_h - 8 * scale) / 2)
-      for row = 1, 8 do
-        local bits = g[row]
-        for colp = 0, 7 do
-          if bit_pixel(bits, colp) == 1 then
-            gfx_2d.rect(ox + colp * scale, oy + (row - 1) * scale, scale, scale, rf, gf, bf, af, true)
-          end
-        end
-      end
-    end
+  if #str == 0 then return end
+  cx, cy = math.floor(cx or 1), math.floor(cy or 1)
+  local px, py = D.cell_to_pixel(cx, cy)
+  local pw = #str * D.cell_w
+  local ph = D.cell_h
+  if bg_color then
+    local r, g, b, a = color.resolve(bg_color)
+    gfx_2d.rect(px, py, pw, ph, r, g, b, a, true)
   end
+  local r, g, b, a = color.resolve(fg_color)
+  gfx_2d.text(px, py, str, r, g, b, a, D.text_scale)
 end
 
-function atlasgfx.cell_to_pixel(cx, cy)
-  return (math.floor(cx or 1) - 1) * atlasgfx.cell_w, (math.floor(cy or 1) - 1) * atlasgfx.cell_h
-end
-
---- Mouse / uiX uiY (canvas pixels, origin top-left) → 1-based cell index.
-function atlasgfx.pixel_to_cell_rel(px, py)
-  local cx = math.floor((tonumber(px) or 0) / atlasgfx.cell_w) + 1
-  local cy = math.floor((tonumber(py) or 0) / atlasgfx.cell_h) + 1
-  return cx, cy
-end
-
-
-_G.__AtlasGFX = atlasgfx
-return atlasgfx
+_G.__AtlasDraw = D
+return D
 ]=],
 	},
 	{
@@ -4532,7 +4514,8 @@ M.CORE_PATHS = {
 	"/home/AtlasOS/shell.lua",
 	"/home/AtlasOS/ui.lua",
 	"/home/lib/startmenu.lua",
-	"/home/lib/atlasgfx.lua",
+	"/home/lib/atlas_color.lua",
+	"/home/lib/atlas_draw.lua",
 	"/home/lib/atlasinstall.lua",
 	"/home/lib/atlasprofile.lua",
 	"/home/lib/atlastheme.lua",
@@ -5024,12 +5007,12 @@ return atlastheme
 
 local M = {}
 
---- @param ctx { UI, window, widgets, atlasgfx, appkit, atlastheme, VERSION, paths, deskutil, startmenu }
+--- @param ctx { UI, window, widgets, draw, appkit, atlastheme, VERSION, paths, deskutil, startmenu }
 function M.create(ctx)
 	local UI = ctx.UI
 	local window = ctx.window
 	local widgets = ctx.widgets
-	local atlasgfx = ctx.atlasgfx
+	local draw = ctx.draw
 	local appkit = ctx.appkit
 	local atlastheme = ctx.atlastheme
 	local VERSION = ctx.VERSION
@@ -5122,7 +5105,7 @@ function M.create(ctx)
 					UI = UI,
 					widgets = widgets,
 					window = window,
-					atlasgfx = atlasgfx,
+					draw = draw,
 					atlastheme = atlastheme,
 					VERSION = VERSION,
 					deskutil = deskutil,
@@ -5558,61 +5541,6 @@ function M.sync_files_shell(shell, in_trash)
 end
 
 return M
-]=],
-	},
-	{
-		path = [[/home/lib/font8x8_basic.lua]],
-		body = [=[--[[ Public-domain font8x8 basic (U+0000–U+007F). See dhepper/font8x8 on GitHub. ]]
-local function glyph_from_hex16(s16)
-  local g = {}
-  for i = 1, 8 do
-    g[i] = tonumber(s16:sub(i * 2 - 1, i * 2), 16) or 0
-  end
-  return g
-end
-
--- 128 glyphs × 8 rows, 2 hex digits per row → 16 hex chars per glyph (no separators)
-local PACKED = table.concat({
-  "0000000000000000","0000000000000000","0000000000000000","0000000000000000",
-  "0000000000000000","0000000000000000","0000000000000000","0000000000000000",
-  "0000000000000000","0000000000000000","0000000000000000","0000000000000000",
-  "0000000000000000","0000000000000000","0000000000000000","0000000000000000",
-  "0000000000000000","0000000000000000","0000000000000000","0000000000000000",
-  "0000000000000000","0000000000000000","0000000000000000","0000000000000000",
-  "0000000000000000","0000000000000000","0000000000000000","0000000000000000",
-  "0000000000000000","0000000000000000","0000000000000000","0000000000000000",
-  "0000000000000000","183c3c1818001800","3636000000000000","36367f367f363600",
-  "0c3e031e301f0c00","006333180c0c6663","1c361c6e3b336e00","0606030000000000",
-  "180c0606060c1800","060c1818180c0600","0066333cff3c6600","000c0c3f0c0c0000",
-  "0000000000000c0c","0000003f00000000","00000000000c0c00","6030180c06030100",
-  "3e63737b6f673e00","0c0e0c0c0c0c3f00","1e33301c06333f00","1e33301c30331e00",
-  "383c36337f307800","3f031f3030331e00","1c0603031f33331e00","1e333030180c0c00",
-  "1e33331e1e33331e00","1e33333e30180e00","000c0c00000c0c00","000c0c00000c0c06",
-  "180c0603060c1800","00003f00003f0000","060c1830180c0600","1e3330180c000c00",
-  "3e637b7b7b031e00","0c1e33333f333300","3f66663e66663f00","3c66030303663c00",
-  "1f36666666361f00","7f46161e16467f00","7f46161e16060f00","3c66030373667c00",
-  "3333333f33333300","33333333331e0c00","63637f7f6b636300","63636f7b73636300",
-  "1c36636363361c00","3f66663e06060f00","1e333333331e3800","3f66663e36666700",
-  "1e33070e38331e00","3f2d0c0c0c0c1e00","3333333333333f00","33333333331e0c00",
-  "63636b7f7f776300","6363361c1c366300","3333331e0c0c1e00","7f6331180c263f00",
-  "1e06060606061e00","03060c1830604000","1e18181818181e00","081c366300000000",
-  "00000000000000ff","0c0c180000000000","00001e303e336e00","0706063e66663b00",
-  "00001e330303331e","3830303e33336e00","00001e333f03331e","1c36060f06060f00",
-  "00006e33333e301f","0706366e66666700","0c000e0c0c0c1e00","300030303033331e",
-  "070666361e366700","0e0c0c0c0c0c1e00","0000337f7f6b6300","00001f3333333300",
-  "00001e333333331e","00003b66663e060f","00006e33333e3078","00003b6e66060f00",
-  "00003e031e301f00","080c3e0c0c2c1800","0000333333336e00","00003333331e0c00",
-  "0000636b7f7f3600","000063361c366300","00003333333e301f","00003f190c263f00",
-  "380c0c070c0c3800","1818180018181800","070c0c380c0c0700",  "6e3b000000000000",
-  "0000000000000000","0000000000000000","0000000000000000","0000000000000000",
-})
-
-local out = {}
-for i = 1, 128 do
-  local off = (i - 1) * 16 + 1
-  out[i] = glyph_from_hex16(PACKED:sub(off, off + 15))
-end
-return out
 ]=],
 	},
 	{
@@ -6424,7 +6352,7 @@ return M
   W.label_block(win, col, row, { "a", "b" })
 ]]
 
-local atlasgfx = dofile("/home/lib/atlasgfx.lua")
+local draw = dofile("/home/lib/atlas_draw.lua")
 local widgets = {}
 
 local function draw_text_line(win, rel_col, rel_row, text)
@@ -6434,7 +6362,7 @@ local function draw_text_line(win, rel_col, rel_row, text)
   local maxc = cw - rel_col
   text = tostring(text)
   if #text > maxc then text = text:sub(1, maxc) end
-  atlasgfx.text(win:client_x() + rel_col, win:client_y() + rel_row, text, win.client_fg, win.client_bg)
+  draw.text(win:client_x() + rel_col, win:client_y() + rel_row, text, win.client_fg, win.client_bg)
 end
 
 local function draw_text_lines(win, lines, start_line, y0)
@@ -6450,7 +6378,7 @@ local function draw_text_lines(win, lines, start_line, y0)
     if line then
       line = tostring(line)
       if #line > cw then line = line:sub(1, cw) end
-      atlasgfx.text(win:client_x(), win:client_y() + y0 + row, line, win.client_fg, win.client_bg)
+      draw.text(win:client_x(), win:client_y() + y0 + row, line, win.client_fg, win.client_bg)
     end
   end
 end
@@ -6477,8 +6405,8 @@ function widgets.button(win, col, row, width, label, fg, bg)
   local inner = width - 2
   if #label > inner then label = label:sub(1, inner) end
   local s = "[" .. label .. string.rep(" ", inner - #label) .. "]"
-  atlasgfx.fillRect(cx + col, cy + row, width, 1, bg)
-  atlasgfx.text(cx + col, cy + row, s, fg, bg)
+  draw.fillRect(cx + col, cy + row, width, 1, bg)
+  draw.text(cx + col, cy + row, s, fg, bg)
 end
 
 function widgets.hrule(win, row, ch)
@@ -6487,7 +6415,7 @@ function widgets.hrule(win, row, ch)
   if cw < 1 then return end
   row = math.floor(row)
   if row < 0 or row >= win:client_h() then return end
-  atlasgfx.text(win:client_x(), win:client_y() + row, string.rep(ch, cw), win.client_fg, win.client_bg)
+  draw.text(win:client_x(), win:client_y() + row, string.rep(ch, cw), win.client_fg, win.client_bg)
 end
 
 function widgets.label_block(win, col, row, text_lines)
@@ -6529,14 +6457,14 @@ return widgets
 	{
 		path = [[/home/lib/window.lua]],
 		body = [=[--[[
-  window.lua — window chrome + desktop (LuaMade gfx via atlasgfx facade).
+  window.lua — window chrome + desktop (LuaMade gfx via atlas_draw).
 
   Desktop: add / remove / bring_to_front / set_focus / focus_next / focus_prev
   Title bar: minimize (_), maximize (^/v), close (x). hit_chrome(win, cx, cy).
   Text: draw_text_line, draw_text_lines (clipped to client area)
 ]]
 
-local atlasgfx = dofile("/home/lib/atlasgfx.lua")
+local draw = dofile("/home/lib/atlas_draw.lua")
 local window = {}
 
 local function clamp_title(s, maxLen)
@@ -6586,23 +6514,23 @@ end
 function Win:paint()
   if self.minimized then return end
   local x, y, w, h = self.x, self.y, self.w, self.h
-  atlasgfx.fillRect(x, y, w, h, self.body_bg)
-  atlasgfx.rect(x, y, w, h, self.body_fg)
-  atlasgfx.fillRect(x + 1, y + 1, w - 2, 1, self.title_bg)
+  draw.fillRect(x, y, w, h, self.body_bg)
+  draw.rect(x, y, w, h, self.body_fg)
+  draw.fillRect(x + 1, y + 1, w - 2, 1, self.title_bg)
   local btn = title_btn_count(w)
   local tmax = math.max(1, w - 4 - btn)
   local title_prefix = self.focused and "*" or " "
-  atlasgfx.text(x + 2, y + 1, title_prefix .. clamp_title(self.title, tmax), self.title_fg, self.title_bg)
+  draw.text(x + 2, y + 1, title_prefix .. clamp_title(self.title, tmax), self.title_fg, self.title_bg)
   if btn >= 3 then
-    atlasgfx.text(x + w - 4, y + 1, "_", self.title_fg, self.title_bg)
+    draw.text(x + w - 4, y + 1, "_", self.title_fg, self.title_bg)
   end
   if btn >= 2 then
-    atlasgfx.text(x + w - 3, y + 1, self.maximized and "v" or "^", self.title_fg, self.title_bg)
+    draw.text(x + w - 3, y + 1, self.maximized and "v" or "^", self.title_fg, self.title_bg)
   end
-  atlasgfx.text(x + w - 2, y + 1, "x", self.title_fg, self.title_bg)
+  draw.text(x + w - 2, y + 1, "x", self.title_fg, self.title_bg)
   local cw, ch = self:client_w(), self:client_h()
   if cw >= 1 and ch >= 1 then
-    atlasgfx.fillRect(self:client_x(), self:client_y(), cw, ch, self.client_bg)
+    draw.fillRect(self:client_x(), self:client_y(), cw, ch, self.client_bg)
   end
 end
 
@@ -6661,7 +6589,7 @@ function window.draw_text_line(win, rel_col, rel_row, text, fg, bg)
   local maxc = cw - rel_col
   text = tostring(text)
   if #text > maxc then text = text:sub(1, maxc) end
-  atlasgfx.text(win:client_x() + rel_col, win:client_y() + rel_row, text, fg or win.client_fg, bg or win.client_bg)
+  draw.text(win:client_x() + rel_col, win:client_y() + rel_row, text, fg or win.client_fg, bg or win.client_bg)
 end
 
 --- Fill client with lines[start_line], lines[start_line+1], … (1-based index).
@@ -6676,7 +6604,7 @@ function window.draw_text_lines(win, lines, start_line)
     if line then
       line = tostring(line)
       if #line > cw then line = line:sub(1, cw) end
-      atlasgfx.text(win:client_x(), win:client_y() + row, line, win.client_fg, win.client_bg)
+      draw.text(win:client_x(), win:client_y() + row, line, win.client_fg, win.client_bg)
     end
   end
 end
@@ -6797,7 +6725,7 @@ end
 function window.Desktop.paint_region(d, gx, gy, gw, gh)
   gx, gy = math.max(1, math.floor(gx)), math.max(1, math.floor(gy))
   gw, gh = math.max(1, math.floor(gw)), math.max(1, math.floor(gh))
-  atlasgfx.fillRect(gx, gy, gw, gh, d.bg_bg)
+  draw.fillRect(gx, gy, gw, gh, d.bg_bg)
   for i = 1, #d._windows do
     if not d._windows[i].minimized then
       d._windows[i]:paint()
@@ -6807,7 +6735,7 @@ end
 
 function window.Desktop.paint(d, gw, gh)
   if not gw or not gh then
-    local cw, ch = atlasgfx.canvas_cells()
+    local cw, ch = draw.canvas_cells()
     if cw and ch then
       gw, gh = cw, ch
     end
