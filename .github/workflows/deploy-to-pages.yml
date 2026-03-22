@@ -73,8 +73,6 @@ jobs:
                   <code>httpget https://garretreichenbach.github.io/AtlasOS/atlasos-web-installer.lua /etc/startup.lua && reboot</code>
               </div>
 
-              <p><strong>Note:</strong> Replace <code>garretreichenbach</code> with your actual GitHub username.</p>
-
               <h2>What it does</h2>
               <ol>
                   <li>Downloads the complete AtlasOS installer bundle</li>
