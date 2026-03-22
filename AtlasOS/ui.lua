@@ -28,7 +28,7 @@ local builtin_paint = dofile("/home/lib/builtin_window_paint.lua")
 local LAYOUT_PATH = "/etc/AtlasOS/layout.txt"
 local VERSION = "0.3.2"
 
--- Default canvas (cells) before first gfx_2d.setCanvasSize; avoids trusting the mod default.
+-- Default canvas (cells) before first gfx2d.setCanvasSize; avoids trusting the mod default.
 local CANVAS_DEFAULT_W, CANVAS_DEFAULT_H = 150, 100
 
 --- Per-row / per-app icon colors (appinfo icon_fg, icon_bg, icon_row_fg, icon_taskbar_sel_fg).
@@ -91,7 +91,7 @@ local CW, CH = draw.cell_w, draw.cell_h
 local function C(token) return atlas_color.resolve(token) end
 
 -- Persistent gui components for the taskbar strip.
--- Assumption: gui.GUIManager:draw() issues gfx_2d.rect/text calls without
+-- Assumption: gui.GUIManager:draw() issues gfx2d.rect/text calls without
 -- managing its own clear/batch cycle, so it can be called inside the existing
 -- draw.begin_frame() / draw.end_frame() batch in UI.redraw().
 local _TB_POOL      = 24
@@ -1316,7 +1316,7 @@ function UI.draw_taskbar()
 	if UI.taskbar_sel > #slots then UI.taskbar_sel = math.max(1, #slots) end
 
 	-- Render bg strip, slot highlight panels, status / clock / world text.
-	-- Assumption: gui.GUIManager:draw() issues gfx_2d.rect/text calls without
+	-- Assumption: gui.GUIManager:draw() issues gfx2d.rect/text calls without
 	-- managing its own clear or batch — it therefore composites correctly inside the
 	-- draw.begin_frame() / draw.end_frame() batch started by UI.redraw().
 	_tb_mgr:update(0)

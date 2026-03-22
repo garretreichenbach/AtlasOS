@@ -280,7 +280,7 @@ if not factory then
     -- Draw vertical divider line
     if _sg_div and _sg_div.x then
       local r, g, b, a = C(win.client_fg)
-      gfx_2d.line(_sg_div.x, _sg_div.y1, _sg_div.x, _sg_div.y2, r, g, b, a)
+      gfx2d.line(_sg_div.x, _sg_div.y1, _sg_div.x, _sg_div.y2, r, g, b, a)
     end
 
     _sg_mgr:draw()

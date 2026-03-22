@@ -78,7 +78,7 @@ local CORE_PATHS = {
 }
 
 local BUNDLE_FILE_COUNT = 48
-local BUNDLE_TOTAL_BYTES = 221236
+local BUNDLE_TOTAL_BYTES = 220991
 local BUNDLE = {
 	{
 		path = [[/home/AtlasOS/APPINFO.md]],
@@ -1560,7 +1560,7 @@ if not factory then
     -- Draw vertical divider line
     if _sg_div and _sg_div.x then
       local r, g, b, a = C(win.client_fg)
-      gfx_2d.line(_sg_div.x, _sg_div.y1, _sg_div.x, _sg_div.y2, r, g, b, a)
+      gfx2d.line(_sg_div.x, _sg_div.y1, _sg_div.x, _sg_div.y2, r, g, b, a)
     end
 
     _sg_mgr:draw()
@@ -2835,7 +2835,7 @@ local builtin_paint = dofile("/home/lib/builtin_window_paint.lua")
 local LAYOUT_PATH = "/etc/AtlasOS/layout.txt"
 local VERSION = "0.3.2"
 
--- Default canvas (cells) before first gfx_2d.setCanvasSize; avoids trusting the mod default.
+-- Default canvas (cells) before first gfx2d.setCanvasSize; avoids trusting the mod default.
 local CANVAS_DEFAULT_W, CANVAS_DEFAULT_H = 150, 100
 
 --- Per-row / per-app icon colors (appinfo icon_fg, icon_bg, icon_row_fg, icon_taskbar_sel_fg).
@@ -2898,7 +2898,7 @@ local CW, CH = draw.cell_w, draw.cell_h
 local function C(token) return atlas_color.resolve(token) end
 
 -- Persistent gui components for the taskbar strip.
--- Assumption: gui.GUIManager:draw() issues gfx_2d.rect/text calls without
+-- Assumption: gui.GUIManager:draw() issues gfx2d.rect/text calls without
 -- managing its own clear/batch cycle, so it can be called inside the existing
 -- draw.begin_frame() / draw.end_frame() batch in UI.redraw().
 local _TB_POOL      = 24
@@ -4123,7 +4123,7 @@ function UI.draw_taskbar()
 	if UI.taskbar_sel > #slots then UI.taskbar_sel = math.max(1, #slots) end
 
 	-- Render bg strip, slot highlight panels, status / clock / world text.
-	-- Assumption: gui.GUIManager:draw() issues gfx_2d.rect/text calls without
+	-- Assumption: gui.GUIManager:draw() issues gfx2d.rect/text calls without
 	-- managing its own clear or batch — it therefore composites correctly inside the
 	-- draw.begin_frame() / draw.end_frame() batch started by UI.redraw().
 	_tb_mgr:update(0)
@@ -4969,17 +4969,17 @@ return M
 	{
 		path = [[/home/lib/atlas_draw.lua]],
 		body = [=[--[[
-  atlas_draw.lua — Cell-grid drawing adapter backed by gfx_2d.
+  atlas_draw.lua — Cell-grid drawing adapter backed by gfx2d.
   Drop-in replacement for atlasgfx.lua (Phase 1 migration).
 
   All public coordinates are in character cells (1-based x/y, width/height in cells).
   Pixel conversion is handled internally. Phase 2 will move callers to pixel coords
   and gui components, at which point this module can be removed.
 
-  Canvas sizing: gfx_2d.setAutoScale(true) is enabled so the host viewport scales
+  Canvas sizing: gfx2d.setAutoScale(true) is enabled so the host viewport scales
   the logical canvas automatically — no manual cell_scale / gfx.conf needed.
 
-  Text rendering uses gfx_2d.text() (built-in pixel font, scale 1) instead of the
+  Text rendering uses gfx2d.text() (built-in pixel font, scale 1) instead of the
   manual 8×8 bitmap font loop from the old atlasgfx.
 ]]
 
@@ -4987,7 +4987,7 @@ if _G.__AtlasDraw then return _G.__AtlasDraw end
 
 local color = dofile("/home/lib/atlas_color.lua")
 
--- Logical pixel dimensions of one cell (at gfx_2d text scale 1).
+-- Logical pixel dimensions of one cell (at gfx2d text scale 1).
 -- cell_w matches the 8-pixel-wide built-in font; cell_h adds 2px leading.
 local CELL_W = 8
 local CELL_H = 10
@@ -4999,11 +4999,11 @@ local D = {
   layer      = "default",
 }
 
---- init([conf]) — validates gfx_2d is present. The conf table is accepted for
+--- init([conf]) — validates gfx2d is present. The conf table is accepted for
 --- backward compatibility with callers that still pass a gfx.conf result, but the
---- cell_scale field is no longer used; scaling is handled by gfx_2d.setAutoScale.
+--- cell_scale field is no longer used; scaling is handled by gfx2d.setAutoScale.
 function D.init(_conf)
-  assert(type(gfx_2d) == "table", "atlas_draw.init: global 'gfx_2d' is missing")
+  assert(type(gfx2d) == "table", "atlas_draw.init: global 'gfx2d' is missing")
   D.cell_w     = CELL_W
   D.cell_h     = CELL_H
   D.text_scale = 1
@@ -5014,25 +5014,20 @@ end
 function D.set_canvas_from_cells(cols, rows)
   cols = math.max(1, math.floor(cols or 80))
   rows = math.max(1, math.floor(rows or 24))
-  assert(type(gfx_2d.setCanvasSize) == "function",
-    "atlas_draw.set_canvas_from_cells: gfx_2d.setCanvasSize missing")
-  if type(gfx_2d.setAutoScale) == "function" then
-    gfx_2d.setAutoScale(true)
-  end
   local pw = cols * D.cell_w
   local ph = rows * D.cell_h
-  gfx_2d.setCanvasSize(pw, ph)
+  gfx2d.setCanvasSize(pw, ph)
   return pw, ph
 end
 
---- Returns current canvas size in cells (derived from gfx_2d canvas dimensions).
+--- Returns current canvas size in cells (derived from gfx2d canvas dimensions).
 function D.canvas_cells()
   assert(
-    type(gfx_2d.getWidth) == "function" and type(gfx_2d.getHeight) == "function",
-    "atlas_draw.canvas_cells: gfx_2d.getWidth/getHeight missing"
+    type(gfx2d.getWidth) == "function" and type(gfx2d.getHeight) == "function",
+    "atlas_draw.canvas_cells: gfx2d.getWidth/getHeight missing"
   )
-  local gw = gfx_2d.getWidth()
-  local gh = gfx_2d.getHeight()
+  local gw = gfx2d.getWidth()
+  local gh = gfx2d.getHeight()
   if type(gw) ~= "number" or type(gh) ~= "number" then return 80, 24 end
   return math.max(8, math.floor(gw / D.cell_w)),
          math.max(8, math.floor(gh / D.cell_h))
@@ -5040,8 +5035,8 @@ end
 
 --- Returns the canvas pixel dimensions used for input hit-testing.
 function D.canvas_pixels_for_input()
-  if type(gfx_2d.getWidth) ~= "function" then return nil, nil end
-  local gw, gh = gfx_2d.getWidth(), gfx_2d.getHeight()
+  if type(gfx2d.getWidth) ~= "function" then return nil, nil end
+  local gw, gh = gfx2d.getWidth(), gfx2d.getHeight()
   if gw and gh and gw > 0 and gh > 0 then return gw, gh end
   return nil, nil
 end
@@ -5060,15 +5055,15 @@ end
 
 --- Clear the canvas and open a new draw batch (anti-flicker).
 function D.begin_frame()
-  assert(type(gfx_2d.clear) == "function", "atlas_draw.begin_frame: gfx_2d.clear missing")
-  gfx_2d.clear()
-  if type(gfx_2d.beginBatch) == "function" then gfx_2d.beginBatch() end
-  if type(gfx_2d.setLayer) == "function" then gfx_2d.setLayer(D.layer) end
+  assert(type(gfx2d.clear) == "function", "atlas_draw.begin_frame: gfx2d.clear missing")
+  gfx2d.clear()
+  if type(gfx2d.beginBatch) == "function" then gfx2d.beginBatch() end
+  if type(gfx2d.setLayer) == "function" then gfx2d.setLayer(D.layer) end
 end
 
 --- Commit the draw batch started by begin_frame.
 function D.end_frame()
-  if type(gfx_2d.commitBatch) == "function" then gfx_2d.commitBatch() end
+  if type(gfx2d.commitBatch) == "function" then gfx2d.commitBatch() end
 end
 
 --- Filled rectangle in cell coordinates.
@@ -5082,7 +5077,7 @@ function D.fillRect(cx, cy, cw, ch, bg_color)
   local px, py = D.cell_to_pixel(cx, cy)
   local pw, ph = cw * D.cell_w, ch * D.cell_h
   local r, g, b, a = color.resolve(bg_color)
-  gfx_2d.rect(px, py, pw, ph, r, g, b, a, true)
+  gfx2d.rect(px, py, pw, ph, r, g, b, a, true)
 end
 
 --- Outline rectangle in cell coordinates.
@@ -5095,7 +5090,7 @@ function D.rect(cx, cy, cw, ch, fg_color)
   local px, py = D.cell_to_pixel(cx, cy)
   local pw, ph = cw * D.cell_w, ch * D.cell_h
   local r, g, b, a = color.resolve(fg_color)
-  gfx_2d.rect(px, py, pw, ph, r, g, b, a, false)
+  gfx2d.rect(px, py, pw, ph, r, g, b, a, false)
 end
 
 --- Text with background fill in cell coordinates.
@@ -5109,10 +5104,10 @@ function D.text(cx, cy, str, fg_color, bg_color)
   local ph = D.cell_h
   if bg_color then
     local r, g, b, a = color.resolve(bg_color)
-    gfx_2d.rect(px, py, pw, ph, r, g, b, a, true)
+    gfx2d.rect(px, py, pw, ph, r, g, b, a, true)
   end
   local r, g, b, a = color.resolve(fg_color)
-  gfx_2d.text(px, py, str, r, g, b, a, D.text_scale)
+  gfx2d.text(px, py, str, r, g, b, a, D.text_scale)
 end
 
 _G.__AtlasDraw = D
@@ -6980,7 +6975,7 @@ local draw = dofile("/home/lib/atlas_draw.lua")
 local atlas_color = dofile("/home/lib/atlas_color.lua")
 local widgets = {}
 
--- Pixel conversion helpers (gfx_2d uses pixels; cells are 1-based)
+-- Pixel conversion helpers (gfx2d uses pixels; cells are 1-based)
 local CW = draw.cell_w
 local CH = draw.cell_h
 local function C(token) return atlas_color.resolve(token) end
@@ -7041,7 +7036,7 @@ function widgets.button(win, col, row, width, label, fg, bg)
   draw.text(cx + col, cy + row, s, fg, bg)
 end
 
---- Draw a horizontal line at client-relative row (pixel-based via gfx_2d.line).
+--- Draw a horizontal line at client-relative row (pixel-based via gfx2d.line).
 --- _ch parameter accepted for compatibility but ignored (always draws a pixel line).
 function widgets.hrule(win, row, _ch)
   row = math.floor(row)
@@ -7051,7 +7046,7 @@ function widgets.hrule(win, row, _ch)
   local x2 = (win:client_x() + cw - 1) * CW - 1
   local y  = (win:client_y() + row - 1) * CH + math.floor(CH / 2)
   local r, g, b, a = C(win.client_fg)
-  gfx_2d.line(x1, y, x2, y, r, g, b, a)
+  gfx2d.line(x1, y, x2, y, r, g, b, a)
 end
 
 function widgets.label_block(win, col, row, text_lines)

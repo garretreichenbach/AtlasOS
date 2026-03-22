@@ -14,7 +14,7 @@ local draw = dofile("/home/lib/atlas_draw.lua")
 local atlas_color = dofile("/home/lib/atlas_color.lua")
 local widgets = {}
 
--- Pixel conversion helpers (gfx_2d uses pixels; cells are 1-based)
+-- Pixel conversion helpers (gfx2d uses pixels; cells are 1-based)
 local CW = draw.cell_w
 local CH = draw.cell_h
 local function C(token) return atlas_color.resolve(token) end
@@ -75,7 +75,7 @@ function widgets.button(win, col, row, width, label, fg, bg)
   draw.text(cx + col, cy + row, s, fg, bg)
 end
 
---- Draw a horizontal line at client-relative row (pixel-based via gfx_2d.line).
+--- Draw a horizontal line at client-relative row (pixel-based via gfx2d.line).
 --- _ch parameter accepted for compatibility but ignored (always draws a pixel line).
 function widgets.hrule(win, row, _ch)
   row = math.floor(row)
@@ -85,7 +85,7 @@ function widgets.hrule(win, row, _ch)
   local x2 = (win:client_x() + cw - 1) * CW - 1
   local y  = (win:client_y() + row - 1) * CH + math.floor(CH / 2)
   local r, g, b, a = C(win.client_fg)
-  gfx_2d.line(x1, y, x2, y, r, g, b, a)
+  gfx2d.line(x1, y, x2, y, r, g, b, a)
 end
 
 function widgets.label_block(win, col, row, text_lines)
