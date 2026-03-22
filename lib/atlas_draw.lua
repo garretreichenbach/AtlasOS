@@ -4,7 +4,7 @@
 
   All public coordinates are in character cells (1-based x/y, width/height in cells).
   Pixel conversion is handled internally. Phase 2 will move callers to pixel coords
-  and gui_lib components, at which point this module can be removed.
+  and gui components, at which point this module can be removed.
 
   Canvas sizing: gfx_2d.setAutoScale(true) is enabled so the host viewport scales
   the logical canvas automatically — no manual cell_scale / gfx.conf needed.

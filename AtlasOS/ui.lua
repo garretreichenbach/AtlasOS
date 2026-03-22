@@ -90,8 +90,8 @@ local UI = {
 local CW, CH = draw.cell_w, draw.cell_h
 local function C(token) return atlas_color.resolve(token) end
 
--- Persistent gui_lib components for the taskbar strip.
--- Assumption: gui_lib.GUIManager:draw() issues gfx_2d.rect/text calls without
+-- Persistent gui components for the taskbar strip.
+-- Assumption: gui.GUIManager:draw() issues gfx_2d.rect/text calls without
 -- managing its own clear/batch cycle, so it can be called inside the existing
 -- draw.begin_frame() / draw.end_frame() batch in UI.redraw().
 local _TB_POOL      = 24
@@ -109,9 +109,9 @@ local _tb_search_w  = 0      -- search bar width (cells), needed by search API c
 local _tb_y0        = 1      -- taskbar top row (1-based cells)
 
 local function build_taskbar_gui()
-	local P   = gui_lib.Panel
-	local T   = gui_lib.Text
-	local mgr = gui_lib.GUIManager.new()
+	local P   = gui.Panel
+	local T   = gui.Text
+	local mgr = gui.GUIManager.new()
 	-- Transparent bg: draw.begin_frame() handles the canvas clear; mgr should
 	-- not fill the whole canvas, only its component panels.
 	mgr:setBackgroundColor(0, 0, 0, 0)
@@ -278,10 +278,10 @@ local _sm_footer_txt = nil     -- Text: hint footer
 local _sm_tile_data  = {}      -- [i] = {tx, row, tile_w, nrows, block, meta}
 
 local function build_start_menu_gui()
-	local P = gui_lib.Panel
-	local T = gui_lib.Text
-	local B = gui_lib.Button
-	local mgr = gui_lib.GUIManager.new()
+	local P = gui.Panel
+	local T = gui.Text
+	local B = gui.Button
+	local mgr = gui.GUIManager.new()
 	mgr:setBackgroundColor(0, 0, 0, 0)
 
 	local panel = P.new(0, 0, 0, 0)
@@ -1304,7 +1304,7 @@ function UI.draw_taskbar()
 	local tb = t.mode == "dark" and "black" or 22
 	local fg = "bright_white"
 
-	-- Rebuild gui_lib components when canvas dimensions or taskbar height change.
+	-- Rebuild gui components when canvas dimensions or taskbar height change.
 	local key = tostring(UI.W) .. ":" .. tostring(UI.H) .. ":" .. tostring(UI.TASKBAR_H)
 	if not _tb_mgr or _tb_key ~= key then
 		build_taskbar_gui()
@@ -1316,7 +1316,7 @@ function UI.draw_taskbar()
 	if UI.taskbar_sel > #slots then UI.taskbar_sel = math.max(1, #slots) end
 
 	-- Render bg strip, slot highlight panels, status / clock / world text.
-	-- Assumption: gui_lib.GUIManager:draw() issues gfx_2d.rect/text calls without
+	-- Assumption: gui.GUIManager:draw() issues gfx_2d.rect/text calls without
 	-- managing its own clear or batch — it therefore composites correctly inside the
 	-- draw.begin_frame() / draw.end_frame() batch started by UI.redraw().
 	_tb_mgr:update(0)

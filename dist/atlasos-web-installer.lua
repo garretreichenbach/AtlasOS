@@ -78,7 +78,7 @@ local CORE_PATHS = {
 }
 
 local BUNDLE_FILE_COUNT = 48
-local BUNDLE_TOTAL_BYTES = 221380
+local BUNDLE_TOTAL_BYTES = 221236
 local BUNDLE = {
 	{
 		path = [[/home/AtlasOS/APPINFO.md]],
@@ -191,6 +191,146 @@ shell:paint_dropdown(win)  -- last, so the menu draws over content
 ```
 
 Refresh the registry after adding packages: **`reload_apps`** (or restart shell).
+]],
+	},
+	{
+		path = [[/home/AtlasOS/README.md]],
+		body = [[# AtlasOS
+
+**AtlasOS shell:** bottom **taskbar** — **Start [S]** | **search** | fixed **Files / Console** | **your pins** | **Settings** | **Trash**. Middle row (3-line bar): **host · cwd**; bottom row: **left** — computer / **sector** / **system**; **right** — **time + date** (`util.now` + `os.date` when available). **Status** is shown on the bar (no window required); pin the Status app if you want the full panel.
+
+## Install on a LuaMade computer
+
+LuaMade runs **`/etc/startup.lua`** at terminal boot when that file exists ([Startup behavior](https://garretreichenbach.github.io/Logiscript/markdown/core/luamade.html#startup-behavior)).
+
+### Web install via `httpget`
+
+Build the single-file installer from this repo:
+
+```bash
+python3 scripts/build_web_installer.py
+```
+
+That writes **`dist/atlasos-web-installer.lua`**. Keep that generated file committed when installer sources change; the repository workflow rebuilds it and fails if it drifts from the checked-in copy. Host that file on a web server that LuaMade can reach (for example GitHub raw content or GitHub Pages if the domain is trusted by the server).
+
+- **Rolling/latest channel:** use the `main` branch `dist/atlasos-web-installer.lua` URL shown below.
+- **Version-pinned channel:** tag a release like `v1.0.0`; the release workflow rebuilds the installer and uploads the same file as a GitHub Release asset so you can host a stable versioned download URL instead of tracking `main`. You can also run that workflow manually and provide the tag as the workflow `tag` input.
+
+For the simplest in-game install, fetch it straight into **`/etc/startup.lua`** and reboot once:
+
+```text
+httpget https://raw.githubusercontent.com/garretreichenbach/AtlasOS/main/dist/atlasos-web-installer.lua /etc/startup.lua
+reboot
+```
+
+On that next boot, the generated installer unpacks **`AtlasOS/`** into **`/home/AtlasOS/`** and **`lib/`** into **`/home/lib/`**, rewrites **`/etc/startup.lua`** to the normal AtlasOS boot hook, then launches the first-run setup immediately.
+
+If you need to preserve an existing custom startup script, use the safer two-step flow instead so the installer can back it up to **`/etc/startup.lua.atlasos_backup`** before replacing it:
+
+```text
+httpget https://raw.githubusercontent.com/garretreichenbach/AtlasOS/main/dist/atlasos-web-installer.lua /tmp/atlasos-web-installer.lua
+run /tmp/atlasos-web-installer.lua
+```
+
+1. Copy this repo into the computer’s virtual FS (either layout works):
+   - **Full install:** **`lib/`** → **`/home/lib/`**, **`AtlasOS/`** → **`/home/AtlasOS/`**
+   - **Install-from-media:** put the same two folders on a mounted volume (e.g. **`/disk/AtlasOS`**, **`/disk/lib`**) — the first-run loader **copies** them into **`/home/`** while the progress bar advances. Checked roots include **`/install`**, **`/mnt`**, **`/media`**, **`/disk`**, **`/disk1`**, **`/floppy`**. Optionally set **`/etc/AtlasOS/staging_root.txt`** to a single line (absolute path) if your mount point is elsewhere.
+2. Run **`run /home/AtlasOS/installer.lua`**. It checks paths, backs up any existing **`/etc/startup.lua`**, and writes a startup that runs **`installer_gate.lua`**: first boot shows a **copy/verify** loader (real file work, not a fake timer) then **setup** (username + light/dark theme), then writes **`/etc/AtlasOS/setup_complete`** and enters the desktop. Later boots skip setup. To run setup again, delete **`/etc/AtlasOS/setup_complete`** (and optionally **`/etc/AtlasOS/profile.json`** / **`theme.json`**) and reboot. **Updating from an older installer** (startup used to call **`boot_desktop.lua`** only): after copying new files, either run through setup once or create **`/etc/AtlasOS/setup_complete`** (e.g. `fs.write` / equivalent) so the gate skips the wizard.
+3. **Reboot** the computer or open a new terminal session.
+
+Without installing startup, you can still run **`run /home/AtlasOS/shell.lua`** then **`desktop`** for the UI only.
+
+**`run /home/AtlasOS/installer.lua uninstall`** — restore the backup startup or remove AtlasOS hook. **`check`** — verify core files exist.
+
+## Taskbar zones
+
+- **Left (fixed):** Files, Console — not in Start menu groups; cannot unpin.
+- **Middle:** Only apps you **`pin`** (e.g. Guide, Search, Editor).
+- **Right (fixed):** Settings (second-to-last), Trash (last) — cannot unpin.
+- **`tasknext` / `docknext`** — cycle highlight over the visible slots (narrow screens may hide some middle pins).
+- **`go`** — open the highlighted slot’s window.
+
+## Search (background)
+
+Search runs in **small steps each `refresh`** (cooperative “background” until the mod exposes real threads).
+
+- **`search <text>`** or **`find <text>`** — start name + file-content search under `/home` and `/etc`.
+- **`search`** with no args — clear search.
+- **`search_status`** — print hit lists in the console.
+
+Taskbar search field shows the query and counts (name / in-file).
+
+## Start menu
+
+- **`start`** — open / close.
+- Pins in **`/etc/AtlasOS/start_menu.json`** (`{ "version": 1, "groups": [ { "name": "Pinned", "ids": ["welcome", …] } ] }`) — **user apps only** (not the fixed taskbar icons). Legacy **`start_menu.txt`** is read once and migrated to JSON, then removed.
+- **`pin <id> [Group]`** · **`unpin <id>`** · **`pin_group <Name>`**
+- App ids: `welcome` (Guide window) `files` `settings` `console` `status` `trash` … — *pinning* `files`/`settings`/`trash`/`console` is ignored for the bar (those stay fixed left/right). **`status`** can be pinned if you want a **Status** window shortcut.
+
+## Other commands
+
+| Command | Action |
+|---------|--------|
+| `refresh` | Redraw (+ advances search) |
+| `theme` | Light / dark (same as Settings → Personalization) |
+| `devmode` | `on` / `off` — show `/home/AtlasOS` in Files (system tree) |
+| `activities` | Window overview |
+| `desktop` | Rebuild desktop + **input loop** (mouse / keys) |
+| `save_layout` | Save layout + taskbar selection |
+| `winnext` | Focus next visible window (same as **Tab** in desktop) |
+| `welcome` / `help` | Focus **Guide** (system info + README) |
+| `files` … `console` | Focus window (restores if minimized) |
+| `cd` | Files app path |
+
+## Window controls (`desktop` + Input API)
+
+Title bar (right): **`_`** minimize · **`^`** maximize / **`v`** restore · **`x`** close. Drag by the **title** (not on buttons). **Click a window** to raise + focus. Minimized windows appear as **`[Title]`** on the row **above the taskbar** — click to restore. **Tab** cycles focus.
+
+## Keyboard / text input
+
+While **desktop** is running, printable keys and **Backspace** / **Delete** are **cancelled** (via `input.cancelEvent` / `cancelKeyEvent` on the mod) unless a text target is active — currently the **Editor** window when focused. Register more with `UI.extra_input_text_active = function() return … end`. Other keys (Esc, Tab, Enter, arrows, …) still drive the shell.
+
+## Settings
+
+The **Settings** window has a **left category list** (System, Personalization, Apps, Developer, About) and a **right pane** with controls. Click a category, then use buttons (theme, developer mode, open `/home/apps`, reload apps, save layout). Narrow windows show a resize hint.
+
+## Developer mode
+
+By default, **`/home/AtlasOS`** is **hidden** in Files (and `cd` there is blocked). Install apps under **`/home/apps`**. Turn **Developer mode** **ON** in **Settings** or **`devmode on`** to show and open the system tree. Persisted in **`/etc/AtlasOS/settings.txt`**.
+
+## Editor
+
+- **Editor** window (starts **minimized**; not on the fixed taskbar). Open from **Start** or `editor` / `runapp editor [path]`.
+- **Ctrl+S** saves to the path in the title bar (default `/home/notes.txt`). Tab inserts two spaces; arrows / Enter / Backspace / Delete as usual.
+
+## Start menu pins (default)
+
+With **no** `start_menu.json` (and no migratable legacy `.txt`), every **user-pinnable** system app appears under **Pinned** (Guide, Search, Editor, Status, … — not Files/Console/Settings/Trash, which stay on fixed taskbar slots).
+
+## System apps (`/home/AtlasOS/apps/`)
+
+Every built-in (Guide via `welcome`, Files, Console, **Chat** — servers/channels on LuaMade **`net`**, …) is a folder with **`appinfo.json`** and usually a **`paint_module`** Lua file (some also use an **`entry`** script for `runapp`). Copy the repo **`AtlasOS/apps/`** tree to **`/home/AtlasOS/apps/`** and **`lib/atlas_chat_net.lua`** to **`/home/lib/`**. If a package is missing, the taskbar still reserves slots (placeholder `?`) and default pins may show stubs until you install the folder. Chat uses [Network Interface API](https://garretreichenbach.github.io/Logiscript/markdown/io/networking.html) global channels (`openChannel` / `sendChannel` / `receiveChannel`).
+
+## App packages
+
+- Copy folders from **`AtlasOS/packages/`** to **`/home/apps/<name>/`** (each with **`appinfo.json`** + entry script).
+- **`apps`** — list package apps · **`runapp <id>`** · **`reload_apps`**
+- Spec: **`APPINFO.md`**
+
+## Graphics (LuaMade bitmap `gfx`)
+
+The desktop targets the current [Graphics API](https://garretreichenbach.github.io/Logiscript/markdown/graphics/gfx.html): **pixel** canvas, **layers**, and **`gfx.rect` / `gfx.line` / `gfx.point`** with normalized RGBA. AtlasOS keeps a **logical character grid** (windows, taskbar, hit-tests) and draws through **`/home/lib/atlasgfx.lua`**, which rasterizes an embedded **8×8** font (`font8x8_basic`) into cells. Optional `/etc/AtlasOS/gfx.conf` sets **`cell_scale`** (default `1.5`) to scale cell pixel size. On older hosts that still expose **`gfx.text`** / **`gfx.fillRect(..., " ")`**, atlasgfx passes calls through unchanged.
+
+## Files
+
+- LuaMade **`json`** — `require("json")` in settings/appinfo
+- `/home/lib/appinfo.lua` — load `appinfo.json`
+- `/home/lib/appkit.lua` — menu bar, dropdowns, toolbar row for window clients (see `APPINFO.md`)
+- `/home/lib/startmenu.lua` — registry, groups, fixed-slot rules
+- `/home/AtlasOS/ui.lua` — taskbar, search steps, windows
+- `/home/.trash` — Trash taskbar icon focuses **Files** here (`appinfo` `args`); legacy layouts may still have a **Trash** window title (same explorer UI)
+
+See **Install on a LuaMade computer** above for `installer.lua` and `/etc/startup.lua`.
 ]],
 	},
 	{
@@ -1169,15 +1309,15 @@ if not factory then
     view_items[#view_items + 1] = { label = c.label, id = "cat:" .. c.id }
   end
 
-  -- Module-level persistent state for gui_lib components
+  -- Module-level persistent state for gui components
   local _sg_mgr, _sg_key, _sg_win, _sg_yB, _sg_btn_data, _sg_div = nil, nil, nil, 0, {}, {}
   local _sg_cat_panels, _sg_cat_texts, _sg_abtns = {}, {}, {}
 
   local function build_settings_gui()
-    local P = gui_lib.Panel
-    local T = gui_lib.Text
-    local B = gui_lib.Button
-    local mgr = gui_lib.GUIManager.new()
+    local P = gui.Panel
+    local T = gui.Text
+    local B = gui.Button
+    local mgr = gui.GUIManager.new()
     mgr:setBackgroundColor(0, 0, 0, 0)
 
     _sg_cat_panels = {}
@@ -1414,7 +1554,7 @@ if not factory then
       btn(R0, rr, 18, "[ Save layout ]", "cmd:save_layout")
     end
 
-    -- Render sidebar gui_lib components
+    -- Render sidebar gui components
     _sg_mgr:update(0)
 
     -- Draw vertical divider line
@@ -1472,13 +1612,13 @@ if not factory then
 		local CH = draw.cell_h
 		local function C(token) return atlas_color.resolve(token) end
 
-		-- Module-level persistent state for gui_lib components
+		-- Module-level persistent state for gui components
 		local _st_mgr, _st_key, _st_win, _st_y0, _st_texts = nil, nil, nil, 0, {}
 
 		local function build_status_gui()
-			local P = gui_lib.Panel
-			local T = gui_lib.Text
-			local mgr = gui_lib.GUIManager.new()
+			local P = gui.Panel
+			local T = gui.Text
+			local mgr = gui.GUIManager.new()
 			mgr:setBackgroundColor(0, 0, 0, 0)
 
 			_st_texts = {}
@@ -1936,7 +2076,7 @@ end
 		path = [[/home/AtlasOS/installer_ui.lua]],
 		body = [=[--[[
   First-run graphical installer: loading bar, then username + theme setup.
-  Phase 2: renders through gui_lib components. Event handling remains manual
+  Phase 2: renders through gui components. Event handling remains manual
   (no mgr:run()) so the install coroutine can be driven each frame.
   Writes /etc/AtlasOS/setup_complete then chains to boot_desktop.lua.
 ]]
@@ -1948,10 +2088,10 @@ local atlasprofile = dofile("/home/lib/atlasprofile.lua")
 local atlasinstall = dofile("/home/lib/atlasinstall.lua")
 local atlas_color  = dofile("/home/lib/atlas_color.lua")
 
--- gui_lib: LuaMade-provided global; component constructors live under gui_lib.*
-local GUIManager = gui_lib.GUIManager
-local Panel      = gui_lib.Panel
-local Text       = gui_lib.Text
+-- gui: LuaMade-provided global; component constructors live under gui.*
+local GUIManager = gui.GUIManager
+local Panel      = gui.Panel
+local Text       = gui.Text
 
 -- Shorthand: resolve an AtlasOS color token to (r, g, b, a) floats.
 local C = atlas_color.resolve
@@ -2396,146 +2536,6 @@ end
 ]=],
 	},
 	{
-		path = [[/home/AtlasOS/README.md]],
-		body = [[# AtlasOS
-
-**AtlasOS shell:** bottom **taskbar** — **Start [S]** | **search** | fixed **Files / Console** | **your pins** | **Settings** | **Trash**. Middle row (3-line bar): **host · cwd**; bottom row: **left** — computer / **sector** / **system**; **right** — **time + date** (`util.now` + `os.date` when available). **Status** is shown on the bar (no window required); pin the Status app if you want the full panel.
-
-## Install on a LuaMade computer
-
-LuaMade runs **`/etc/startup.lua`** at terminal boot when that file exists ([Startup behavior](https://garretreichenbach.github.io/Logiscript/markdown/core/luamade.html#startup-behavior)).
-
-### Web install via `httpget`
-
-Build the single-file installer from this repo:
-
-```bash
-python3 scripts/build_web_installer.py
-```
-
-That writes **`dist/atlasos-web-installer.lua`**. Keep that generated file committed when installer sources change; the repository workflow rebuilds it and fails if it drifts from the checked-in copy. Host that file on a web server that LuaMade can reach (for example GitHub raw content or GitHub Pages if the domain is trusted by the server).
-
-- **Rolling/latest channel:** use the `main` branch `dist/atlasos-web-installer.lua` URL shown below.
-- **Version-pinned channel:** tag a release like `v1.0.0`; the release workflow rebuilds the installer and uploads the same file as a GitHub Release asset so you can host a stable versioned download URL instead of tracking `main`. You can also run that workflow manually and provide the tag as the workflow `tag` input.
-
-For the simplest in-game install, fetch it straight into **`/etc/startup.lua`** and reboot once:
-
-```text
-httpget https://raw.githubusercontent.com/garretreichenbach/AtlasOS/main/dist/atlasos-web-installer.lua /etc/startup.lua
-reboot
-```
-
-On that next boot, the generated installer unpacks **`AtlasOS/`** into **`/home/AtlasOS/`** and **`lib/`** into **`/home/lib/`**, rewrites **`/etc/startup.lua`** to the normal AtlasOS boot hook, then launches the first-run setup immediately.
-
-If you need to preserve an existing custom startup script, use the safer two-step flow instead so the installer can back it up to **`/etc/startup.lua.atlasos_backup`** before replacing it:
-
-```text
-httpget https://raw.githubusercontent.com/garretreichenbach/AtlasOS/main/dist/atlasos-web-installer.lua /tmp/atlasos-web-installer.lua
-run /tmp/atlasos-web-installer.lua
-```
-
-1. Copy this repo into the computer’s virtual FS (either layout works):
-   - **Full install:** **`lib/`** → **`/home/lib/`**, **`AtlasOS/`** → **`/home/AtlasOS/`**
-   - **Install-from-media:** put the same two folders on a mounted volume (e.g. **`/disk/AtlasOS`**, **`/disk/lib`**) — the first-run loader **copies** them into **`/home/`** while the progress bar advances. Checked roots include **`/install`**, **`/mnt`**, **`/media`**, **`/disk`**, **`/disk1`**, **`/floppy`**. Optionally set **`/etc/AtlasOS/staging_root.txt`** to a single line (absolute path) if your mount point is elsewhere.
-2. Run **`run /home/AtlasOS/installer.lua`**. It checks paths, backs up any existing **`/etc/startup.lua`**, and writes a startup that runs **`installer_gate.lua`**: first boot shows a **copy/verify** loader (real file work, not a fake timer) then **setup** (username + light/dark theme), then writes **`/etc/AtlasOS/setup_complete`** and enters the desktop. Later boots skip setup. To run setup again, delete **`/etc/AtlasOS/setup_complete`** (and optionally **`/etc/AtlasOS/profile.json`** / **`theme.json`**) and reboot. **Updating from an older installer** (startup used to call **`boot_desktop.lua`** only): after copying new files, either run through setup once or create **`/etc/AtlasOS/setup_complete`** (e.g. `fs.write` / equivalent) so the gate skips the wizard.
-3. **Reboot** the computer or open a new terminal session.
-
-Without installing startup, you can still run **`run /home/AtlasOS/shell.lua`** then **`desktop`** for the UI only.
-
-**`run /home/AtlasOS/installer.lua uninstall`** — restore the backup startup or remove AtlasOS hook. **`check`** — verify core files exist.
-
-## Taskbar zones
-
-- **Left (fixed):** Files, Console — not in Start menu groups; cannot unpin.
-- **Middle:** Only apps you **`pin`** (e.g. Guide, Search, Editor).
-- **Right (fixed):** Settings (second-to-last), Trash (last) — cannot unpin.
-- **`tasknext` / `docknext`** — cycle highlight over the visible slots (narrow screens may hide some middle pins).
-- **`go`** — open the highlighted slot’s window.
-
-## Search (background)
-
-Search runs in **small steps each `refresh`** (cooperative “background” until the mod exposes real threads).
-
-- **`search <text>`** or **`find <text>`** — start name + file-content search under `/home` and `/etc`.
-- **`search`** with no args — clear search.
-- **`search_status`** — print hit lists in the console.
-
-Taskbar search field shows the query and counts (name / in-file).
-
-## Start menu
-
-- **`start`** — open / close.
-- Pins in **`/etc/AtlasOS/start_menu.json`** (`{ "version": 1, "groups": [ { "name": "Pinned", "ids": ["welcome", …] } ] }`) — **user apps only** (not the fixed taskbar icons). Legacy **`start_menu.txt`** is read once and migrated to JSON, then removed.
-- **`pin <id> [Group]`** · **`unpin <id>`** · **`pin_group <Name>`**
-- App ids: `welcome` (Guide window) `files` `settings` `console` `status` `trash` … — *pinning* `files`/`settings`/`trash`/`console` is ignored for the bar (those stay fixed left/right). **`status`** can be pinned if you want a **Status** window shortcut.
-
-## Other commands
-
-| Command | Action |
-|---------|--------|
-| `refresh` | Redraw (+ advances search) |
-| `theme` | Light / dark (same as Settings → Personalization) |
-| `devmode` | `on` / `off` — show `/home/AtlasOS` in Files (system tree) |
-| `activities` | Window overview |
-| `desktop` | Rebuild desktop + **input loop** (mouse / keys) |
-| `save_layout` | Save layout + taskbar selection |
-| `winnext` | Focus next visible window (same as **Tab** in desktop) |
-| `welcome` / `help` | Focus **Guide** (system info + README) |
-| `files` … `console` | Focus window (restores if minimized) |
-| `cd` | Files app path |
-
-## Window controls (`desktop` + Input API)
-
-Title bar (right): **`_`** minimize · **`^`** maximize / **`v`** restore · **`x`** close. Drag by the **title** (not on buttons). **Click a window** to raise + focus. Minimized windows appear as **`[Title]`** on the row **above the taskbar** — click to restore. **Tab** cycles focus.
-
-## Keyboard / text input
-
-While **desktop** is running, printable keys and **Backspace** / **Delete** are **cancelled** (via `input.cancelEvent` / `cancelKeyEvent` on the mod) unless a text target is active — currently the **Editor** window when focused. Register more with `UI.extra_input_text_active = function() return … end`. Other keys (Esc, Tab, Enter, arrows, …) still drive the shell.
-
-## Settings
-
-The **Settings** window has a **left category list** (System, Personalization, Apps, Developer, About) and a **right pane** with controls. Click a category, then use buttons (theme, developer mode, open `/home/apps`, reload apps, save layout). Narrow windows show a resize hint.
-
-## Developer mode
-
-By default, **`/home/AtlasOS`** is **hidden** in Files (and `cd` there is blocked). Install apps under **`/home/apps`**. Turn **Developer mode** **ON** in **Settings** or **`devmode on`** to show and open the system tree. Persisted in **`/etc/AtlasOS/settings.txt`**.
-
-## Editor
-
-- **Editor** window (starts **minimized**; not on the fixed taskbar). Open from **Start** or `editor` / `runapp editor [path]`.
-- **Ctrl+S** saves to the path in the title bar (default `/home/notes.txt`). Tab inserts two spaces; arrows / Enter / Backspace / Delete as usual.
-
-## Start menu pins (default)
-
-With **no** `start_menu.json` (and no migratable legacy `.txt`), every **user-pinnable** system app appears under **Pinned** (Guide, Search, Editor, Status, … — not Files/Console/Settings/Trash, which stay on fixed taskbar slots).
-
-## System apps (`/home/AtlasOS/apps/`)
-
-Every built-in (Guide via `welcome`, Files, Console, **Chat** — servers/channels on LuaMade **`net`**, …) is a folder with **`appinfo.json`** and usually a **`paint_module`** Lua file (some also use an **`entry`** script for `runapp`). Copy the repo **`AtlasOS/apps/`** tree to **`/home/AtlasOS/apps/`** and **`lib/atlas_chat_net.lua`** to **`/home/lib/`**. If a package is missing, the taskbar still reserves slots (placeholder `?`) and default pins may show stubs until you install the folder. Chat uses [Network Interface API](https://garretreichenbach.github.io/Logiscript/markdown/io/networking.html) global channels (`openChannel` / `sendChannel` / `receiveChannel`).
-
-## App packages
-
-- Copy folders from **`AtlasOS/packages/`** to **`/home/apps/<name>/`** (each with **`appinfo.json`** + entry script).
-- **`apps`** — list package apps · **`runapp <id>`** · **`reload_apps`**
-- Spec: **`APPINFO.md`**
-
-## Graphics (LuaMade bitmap `gfx`)
-
-The desktop targets the current [Graphics API](https://garretreichenbach.github.io/Logiscript/markdown/graphics/gfx.html): **pixel** canvas, **layers**, and **`gfx.rect` / `gfx.line` / `gfx.point`** with normalized RGBA. AtlasOS keeps a **logical character grid** (windows, taskbar, hit-tests) and draws through **`/home/lib/atlasgfx.lua`**, which rasterizes an embedded **8×8** font (`font8x8_basic`) into cells. Optional `/etc/AtlasOS/gfx.conf` sets **`cell_scale`** (default `1.5`) to scale cell pixel size. On older hosts that still expose **`gfx.text`** / **`gfx.fillRect(..., " ")`**, atlasgfx passes calls through unchanged.
-
-## Files
-
-- LuaMade **`json`** — `require("json")` in settings/appinfo
-- `/home/lib/appinfo.lua` — load `appinfo.json`
-- `/home/lib/appkit.lua` — menu bar, dropdowns, toolbar row for window clients (see `APPINFO.md`)
-- `/home/lib/startmenu.lua` — registry, groups, fixed-slot rules
-- `/home/AtlasOS/ui.lua` — taskbar, search steps, windows
-- `/home/.trash` — Trash taskbar icon focuses **Files** here (`appinfo` `args`); legacy layouts may still have a **Trash** window title (same explorer UI)
-
-See **Install on a LuaMade computer** above for `installer.lua` and `/etc/startup.lua`.
-]],
-	},
-	{
 		path = [[/home/AtlasOS/shell.lua]],
 		body = [=[--[[
   AtlasOS — boots into Ubuntu-like desktop. Terminal commands = fallback until input API.
@@ -2897,8 +2897,8 @@ local UI = {
 local CW, CH = draw.cell_w, draw.cell_h
 local function C(token) return atlas_color.resolve(token) end
 
--- Persistent gui_lib components for the taskbar strip.
--- Assumption: gui_lib.GUIManager:draw() issues gfx_2d.rect/text calls without
+-- Persistent gui components for the taskbar strip.
+-- Assumption: gui.GUIManager:draw() issues gfx_2d.rect/text calls without
 -- managing its own clear/batch cycle, so it can be called inside the existing
 -- draw.begin_frame() / draw.end_frame() batch in UI.redraw().
 local _TB_POOL      = 24
@@ -2916,9 +2916,9 @@ local _tb_search_w  = 0      -- search bar width (cells), needed by search API c
 local _tb_y0        = 1      -- taskbar top row (1-based cells)
 
 local function build_taskbar_gui()
-	local P   = gui_lib.Panel
-	local T   = gui_lib.Text
-	local mgr = gui_lib.GUIManager.new()
+	local P   = gui.Panel
+	local T   = gui.Text
+	local mgr = gui.GUIManager.new()
 	-- Transparent bg: draw.begin_frame() handles the canvas clear; mgr should
 	-- not fill the whole canvas, only its component panels.
 	mgr:setBackgroundColor(0, 0, 0, 0)
@@ -3085,10 +3085,10 @@ local _sm_footer_txt = nil     -- Text: hint footer
 local _sm_tile_data  = {}      -- [i] = {tx, row, tile_w, nrows, block, meta}
 
 local function build_start_menu_gui()
-	local P = gui_lib.Panel
-	local T = gui_lib.Text
-	local B = gui_lib.Button
-	local mgr = gui_lib.GUIManager.new()
+	local P = gui.Panel
+	local T = gui.Text
+	local B = gui.Button
+	local mgr = gui.GUIManager.new()
 	mgr:setBackgroundColor(0, 0, 0, 0)
 
 	local panel = P.new(0, 0, 0, 0)
@@ -4111,7 +4111,7 @@ function UI.draw_taskbar()
 	local tb = t.mode == "dark" and "black" or 22
 	local fg = "bright_white"
 
-	-- Rebuild gui_lib components when canvas dimensions or taskbar height change.
+	-- Rebuild gui components when canvas dimensions or taskbar height change.
 	local key = tostring(UI.W) .. ":" .. tostring(UI.H) .. ":" .. tostring(UI.TASKBAR_H)
 	if not _tb_mgr or _tb_key ~= key then
 		build_taskbar_gui()
@@ -4123,7 +4123,7 @@ function UI.draw_taskbar()
 	if UI.taskbar_sel > #slots then UI.taskbar_sel = math.max(1, #slots) end
 
 	-- Render bg strip, slot highlight panels, status / clock / world text.
-	-- Assumption: gui_lib.GUIManager:draw() issues gfx_2d.rect/text calls without
+	-- Assumption: gui.GUIManager:draw() issues gfx_2d.rect/text calls without
 	-- managing its own clear or batch — it therefore composites correctly inside the
 	-- draw.begin_frame() / draw.end_frame() batch started by UI.redraw().
 	_tb_mgr:update(0)
@@ -4974,7 +4974,7 @@ return M
 
   All public coordinates are in character cells (1-based x/y, width/height in cells).
   Pixel conversion is handled internally. Phase 2 will move callers to pixel coords
-  and gui_lib components, at which point this module can be removed.
+  and gui components, at which point this module can be removed.
 
   Canvas sizing: gfx_2d.setAutoScale(true) is enabled so the host viewport scales
   the logical canvas automatically — no manual cell_scale / gfx.conf needed.
@@ -7025,7 +7025,7 @@ function widgets.log_tail_index(lines, visible_rows)
 end
 
 --- Draw a text button at client-relative (col, row).
---- NOTE: Callers should migrate to gui_lib.Button directly in Phase 2.6 for hover/pressed state.
+--- NOTE: Callers should migrate to gui.Button directly in Phase 2.6 for hover/pressed state.
 function widgets.button(win, col, row, width, label, fg, bg)
   fg, bg = fg or "bright_white", bg or "blue"
   local cx, cy = win:client_x(), win:client_y()
@@ -7154,12 +7154,12 @@ local function title_btn_count(w)
 end
 
 -- ── Window Chrome GUI (Phase 2.4) ───────────────────────────────────────────
---- Build gui_lib components for a window's chrome (bg, border, title, buttons, client area).
+--- Build gui components for a window's chrome (bg, border, title, buttons, client area).
 local function build_win_gui(win)
-  local P = gui_lib.Panel
-  local T = gui_lib.Text
-  local B = gui_lib.Button
-  local mgr = gui_lib.GUIManager.new()
+  local P = gui.Panel
+  local T = gui.Text
+  local B = gui.Button
+  local mgr = gui.GUIManager.new()
   mgr:setBackgroundColor(0, 0, 0, 0)
 
   local chrome = P.new(0, 0, 0, 0)
@@ -7342,7 +7342,7 @@ function window.Desktop.add(d, win)
   end
 end
 
---- Clean up gui_lib components for a window (called on window removal).
+--- Clean up gui components for a window (called on window removal).
 function window.win_gui_cleanup(win)
   win._win_mgr = nil
 end
@@ -7350,7 +7350,7 @@ end
 function window.Desktop.remove(d, win)
   local i = index_of(d._windows, win)
   if not i then return false end
-  window.win_gui_cleanup(win)  -- Clean up gui_lib components before removal
+  window.win_gui_cleanup(win)  -- Clean up gui components before removal
   table.remove(d._windows, i)
   if d._focus == win then
     d._focus = d._windows[math.min(i, #d._windows)] or d._windows[#d._windows]

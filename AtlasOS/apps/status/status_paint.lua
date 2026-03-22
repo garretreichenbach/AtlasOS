@@ -14,13 +14,13 @@ if not factory then
 		local CH = draw.cell_h
 		local function C(token) return atlas_color.resolve(token) end
 
-		-- Module-level persistent state for gui_lib components
+		-- Module-level persistent state for gui components
 		local _st_mgr, _st_key, _st_win, _st_y0, _st_texts = nil, nil, nil, 0, {}
 
 		local function build_status_gui()
-			local P = gui_lib.Panel
-			local T = gui_lib.Text
-			local mgr = gui_lib.GUIManager.new()
+			local P = gui.Panel
+			local T = gui.Text
+			local mgr = gui.GUIManager.new()
 			mgr:setBackgroundColor(0, 0, 0, 0)
 
 			_st_texts = {}

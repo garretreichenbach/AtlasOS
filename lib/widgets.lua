@@ -59,7 +59,7 @@ function widgets.log_tail_index(lines, visible_rows)
 end
 
 --- Draw a text button at client-relative (col, row).
---- NOTE: Callers should migrate to gui_lib.Button directly in Phase 2.6 for hover/pressed state.
+--- NOTE: Callers should migrate to gui.Button directly in Phase 2.6 for hover/pressed state.
 function widgets.button(win, col, row, width, label, fg, bg)
   fg, bg = fg or "bright_white", bg or "blue"
   local cx, cy = win:client_x(), win:client_y()

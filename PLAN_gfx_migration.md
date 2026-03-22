@@ -1,19 +1,20 @@
 # AtlasOS Graphics Migration Plan
-## From `atlasgfx` to `gfx_2d` + `gui_lib`
+
+## From `atlasgfx` to `gfx_2d` + `gui`
 
 ---
 
 ## Overview
 
 This plan replaces all manual graphics calls and the `atlasgfx` adapter with the new
-`gfx_2d` drawing API and `gui_lib` component system provided by LuaMade. The migration
+`gfx_2d` drawing API and `gui` component system provided by LuaMade. The migration
 is split into two phases:
 
 - **Phase 1** — Replace the low-level drawing plumbing (canvas setup, frame management,
   primitives) so all existing code draws through `gfx_2d` directly instead of through
   `atlasgfx`. The cell-grid abstraction is dropped; all coords move to pixels.
 - **Phase 2** — Replace manually-painted UI surfaces (installer, desktop taskbar, start
-  menu, windows, apps) with `gui_lib` components, using responsive layout and built-in
+  menu, windows, apps) with `gui` components, using responsive layout and built-in
   scaling.
 
 ---
@@ -40,7 +41,7 @@ is split into two phases:
 
 Colors are normalized floats `[0.0, 1.0]` per RGBA channel.
 
-### `gui_lib` — component system
+### `gui` — component system
 
 | Component | Constructor |
 |---|---|
@@ -137,7 +138,7 @@ the logical canvas.
 `installer_ui.lua:250` to convert raw `uiX`/`uiY` pixel events to cell coordinates.
 
 With pixel-native coordinates this becomes a no-op or trivial clamping helper.
-`gui_lib` components handle their own hit testing via `comp:pointInBounds(px, py)`,
+`gui` components handle their own hit testing via `comp:pointInBounds(px, py)`,
 so callers that use `GUIManager` no longer need this at all (Phase 2). For Phase 1,
 retain a simple helper:
 
@@ -175,9 +176,9 @@ is superseded by `gfx_2d.text()`.
 
 ---
 
-## Phase 2 — Migrate to `gui_lib` Components
+## Phase 2 — Migrate to `gui` Components
 
-Phase 2 replaces manually-painted surfaces with `gui_lib` components. Work
+Phase 2 replaces manually-painted surfaces with `gui` components. Work
 surface-by-surface so each can be tested independently.
 
 ### 2.1 Installer UI (`installer_ui.lua`)
@@ -269,17 +270,17 @@ Panel (x, y, w, h, title=win.title)
 
 Window dragging continues via `mgr:setMouseOffset` + hit-test on title bar area.
 Client content area remains a child zone where app paint callbacks render via
-`atlas_draw` (or their own `gui_lib` components).
+`atlas_draw` (or their own `gui` components).
 
 ### 2.5 `lib/widgets.lua`
 
-Replace the `draw_text_line` / `draw_text_lines` pattern with `gui_lib` Text
+Replace the `draw_text_line` / `draw_text_lines` pattern with `gui` Text
 components owned by each caller, or retain `atlas_draw.text()` calls since widgets
 is a thin helper. Evaluate on a case-by-case basis:
 
 - `widgets.log_paint` — keep as `atlas_draw.text()` rows (scrollable log doesn't
   benefit from a Text component)
-- `widgets.button` — replace with `gui_lib.Button`; simplifies hover/pressed state
+- `widgets.button` — replace with `gui.Button`; simplifies hover/pressed state
 - `widgets.hrule` — replace with `gfx_2d.line()`
 
 ### 2.6 App paint callbacks (chat, editor, settings, guide)
@@ -339,25 +340,25 @@ active and `setLayoutCallback` handles resize.
 
 ## Files Affected Summary
 
-| File | Phase 1 changes | Phase 2 changes |
-|---|---|---|
-| `lib/atlasgfx.lua` | replaced by `atlas_draw.lua` | deleted |
-| `lib/font8x8_basic.lua` | unused after Phase 1 | deleted |
-| `lib/atlas_color.lua` | **new** | — |
-| `lib/atlas_draw.lua` | **new** (gfx_2d wrapper) | thinned / removed |
-| `lib/window.lua` | swap atlasgfx → atlas_draw | window chrome → gui_lib Panel |
-| `lib/widgets.lua` | swap atlasgfx → atlas_draw | button → gui_lib Button |
-| `lib/builtin_window_paint.lua` | swap ctx.atlasgfx → ctx.draw | — |
-| `AtlasOS/ui.lua` | canvas init → gfx_2d; swap calls | taskbar + start menu → gui_lib |
-| `AtlasOS/installer_ui.lua` | canvas init → gfx_2d; swap calls | all screens → gui_lib |
-| `AtlasOS/installer.lua` | remove atlasgfx from install list | — |
-| `AtlasOS/apps/editor/editor_paint.lua` | swap atlasgfx → atlas_draw | keep as-is |
-| `AtlasOS/apps/chat/chat_paint.lua` | swap ctx.atlasgfx → ctx.draw | sidebars + input → gui_lib |
-| `AtlasOS/apps/settings/settings_ui.lua` | swap atlasgfx → atlas_draw | → gui_lib |
-| `AtlasOS/apps/welcome/guide_paint.lua` | remove cell_w/cell_h refs | → gui_lib Text |
-| `AtlasOS/apps/search/search_engine.lua` | update draw_taskbar signature | — |
-| `AtlasOS/apps/console/console_paint.lua` | swap atlasgfx → atlas_draw | keep as-is |
-| `AtlasOS/apps/status/status_paint.lua` | swap atlasgfx → atlas_draw | → gui_lib |
+| File                                     | Phase 1 changes                   | Phase 2 changes            |
+|------------------------------------------|-----------------------------------|----------------------------|
+| `lib/atlasgfx.lua`                       | replaced by `atlas_draw.lua`      | deleted                    |
+| `lib/font8x8_basic.lua`                  | unused after Phase 1              | deleted                    |
+| `lib/atlas_color.lua`                    | **new**                           | —                          |
+| `lib/atlas_draw.lua`                     | **new** (gfx_2d wrapper)          | thinned / removed          |
+| `lib/window.lua`                         | swap atlasgfx → atlas_draw        | window chrome → gui Panel  |
+| `lib/widgets.lua`                        | swap atlasgfx → atlas_draw        | button → gui Button        |
+| `lib/builtin_window_paint.lua`           | swap ctx.atlasgfx → ctx.draw      | —                          |
+| `AtlasOS/ui.lua`                         | canvas init → gfx_2d; swap calls  | taskbar + start menu → gui |
+| `AtlasOS/installer_ui.lua`               | canvas init → gfx_2d; swap calls  | all screens → gui          |
+| `AtlasOS/installer.lua`                  | remove atlasgfx from install list | —                          |
+| `AtlasOS/apps/editor/editor_paint.lua`   | swap atlasgfx → atlas_draw        | keep as-is                 |
+| `AtlasOS/apps/chat/chat_paint.lua`       | swap ctx.atlasgfx → ctx.draw      | sidebars + input → gui     |
+| `AtlasOS/apps/settings/settings_ui.lua`  | swap atlasgfx → atlas_draw        | → gui                      |
+| `AtlasOS/apps/welcome/guide_paint.lua`   | remove cell_w/cell_h refs         | → gui Text                 |
+| `AtlasOS/apps/search/search_engine.lua`  | update draw_taskbar signature     | —                          |
+| `AtlasOS/apps/console/console_paint.lua` | swap atlasgfx → atlas_draw        | keep as-is                 |
+| `AtlasOS/apps/status/status_paint.lua`   | swap atlasgfx → atlas_draw        | → gui                      |
 
 ---
 

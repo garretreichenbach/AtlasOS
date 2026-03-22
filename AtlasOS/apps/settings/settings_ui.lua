@@ -29,15 +29,15 @@ if not factory then
     view_items[#view_items + 1] = { label = c.label, id = "cat:" .. c.id }
   end
 
-  -- Module-level persistent state for gui_lib components
+  -- Module-level persistent state for gui components
   local _sg_mgr, _sg_key, _sg_win, _sg_yB, _sg_btn_data, _sg_div = nil, nil, nil, 0, {}, {}
   local _sg_cat_panels, _sg_cat_texts, _sg_abtns = {}, {}, {}
 
   local function build_settings_gui()
-    local P = gui_lib.Panel
-    local T = gui_lib.Text
-    local B = gui_lib.Button
-    local mgr = gui_lib.GUIManager.new()
+    local P = gui.Panel
+    local T = gui.Text
+    local B = gui.Button
+    local mgr = gui.GUIManager.new()
     mgr:setBackgroundColor(0, 0, 0, 0)
 
     _sg_cat_panels = {}
@@ -274,7 +274,7 @@ if not factory then
       btn(R0, rr, 18, "[ Save layout ]", "cmd:save_layout")
     end
 
-    -- Render sidebar gui_lib components
+    -- Render sidebar gui components
     _sg_mgr:update(0)
 
     -- Draw vertical divider line

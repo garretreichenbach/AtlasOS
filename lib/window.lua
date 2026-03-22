@@ -60,12 +60,12 @@ local function title_btn_count(w)
 end
 
 -- ── Window Chrome GUI (Phase 2.4) ───────────────────────────────────────────
---- Build gui_lib components for a window's chrome (bg, border, title, buttons, client area).
+--- Build gui components for a window's chrome (bg, border, title, buttons, client area).
 local function build_win_gui(win)
-  local P = gui_lib.Panel
-  local T = gui_lib.Text
-  local B = gui_lib.Button
-  local mgr = gui_lib.GUIManager.new()
+  local P = gui.Panel
+  local T = gui.Text
+  local B = gui.Button
+  local mgr = gui.GUIManager.new()
   mgr:setBackgroundColor(0, 0, 0, 0)
 
   local chrome = P.new(0, 0, 0, 0)
@@ -248,7 +248,7 @@ function window.Desktop.add(d, win)
   end
 end
 
---- Clean up gui_lib components for a window (called on window removal).
+--- Clean up gui components for a window (called on window removal).
 function window.win_gui_cleanup(win)
   win._win_mgr = nil
 end
@@ -256,7 +256,7 @@ end
 function window.Desktop.remove(d, win)
   local i = index_of(d._windows, win)
   if not i then return false end
-  window.win_gui_cleanup(win)  -- Clean up gui_lib components before removal
+  window.win_gui_cleanup(win)  -- Clean up gui components before removal
   table.remove(d._windows, i)
   if d._focus == win then
     d._focus = d._windows[math.min(i, #d._windows)] or d._windows[#d._windows]

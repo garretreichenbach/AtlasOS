@@ -1,6 +1,6 @@
 --[[
   First-run graphical installer: loading bar, then username + theme setup.
-  Phase 2: renders through gui_lib components. Event handling remains manual
+  Phase 2: renders through gui components. Event handling remains manual
   (no mgr:run()) so the install coroutine can be driven each frame.
   Writes /etc/AtlasOS/setup_complete then chains to boot_desktop.lua.
 ]]
@@ -12,10 +12,10 @@ local atlasprofile = dofile("/home/lib/atlasprofile.lua")
 local atlasinstall = dofile("/home/lib/atlasinstall.lua")
 local atlas_color  = dofile("/home/lib/atlas_color.lua")
 
--- gui_lib: LuaMade-provided global; component constructors live under gui_lib.*
-local GUIManager = gui_lib.GUIManager
-local Panel      = gui_lib.Panel
-local Text       = gui_lib.Text
+-- gui: LuaMade-provided global; component constructors live under gui.*
+local GUIManager = gui.GUIManager
+local Panel      = gui.Panel
+local Text       = gui.Text
 
 -- Shorthand: resolve an AtlasOS color token to (r, g, b, a) floats.
 local C = atlas_color.resolve
